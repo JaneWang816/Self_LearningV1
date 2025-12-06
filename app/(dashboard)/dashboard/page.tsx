@@ -138,8 +138,8 @@ export default function DashboardPage() {
             <QuickStartCard
               href="/dashboard/subjects"
               icon={BookOpen}
-              title="新增科目"
-              description="建立你的學科分類"
+              title="學習內容"
+              description="管理你的學習內容"
               color="blue"
             />
             <QuickStartCard

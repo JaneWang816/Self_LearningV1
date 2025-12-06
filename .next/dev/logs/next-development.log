@@ -1,3 +1,7 @@
-[00:00:01.295] Server  LOG      ✓ Ready in 886ms
-[00:00:03.925] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:18.478] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:01.276] Server  LOG      ✓ Ready in 908ms
+[00:00:24.729] Server  LOG      ○ Compiling /dashboard/flashcards/[deckId] ...
+[00:00:27.727] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:03:23.014] Server  LOG      ✓ Compiled in 173ms
+[00:03:32.322] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:09:49.429] Server  LOG      ✓ Compiled in 131ms
+[00:09:57.897] Server  LOG      ✓ Compiled in 216ms

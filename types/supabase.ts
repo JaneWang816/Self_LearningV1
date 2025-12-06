@@ -203,10 +203,12 @@ export interface Database {
           options: Json | null
           answer: Json | null
           explanation: string | null
+          image_url: string | null
           is_group: boolean | null
           parent_id: string | null
           attempt_count: number
           wrong_count: number
+          consecutive_correct: number
           last_attempted_at: string | null
           marked_for_review: boolean
           created_at: string | null
@@ -221,10 +223,12 @@ export interface Database {
           options?: Json | null
           answer?: Json | null
           explanation?: string | null
+          image_url?: string | null
           is_group?: boolean | null
           parent_id?: string | null
           attempt_count?: number
           wrong_count?: number
+          consecutive_correct?: number
           last_attempted_at?: string | null
           marked_for_review?: boolean
           created_at?: string | null
@@ -239,10 +243,12 @@ export interface Database {
           options?: Json | null
           answer?: Json | null
           explanation?: string | null
+          image_url?: string | null
           is_group?: boolean | null
           parent_id?: string | null
           attempt_count?: number
           wrong_count?: number
+          consecutive_correct?: number
           last_attempted_at?: string | null
           marked_for_review?: boolean
           created_at?: string | null

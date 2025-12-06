@@ -1,0 +1,433 @@
+// components/flashcards/flashcard-import.tsx
+"use client"
+
+import { useState, useRef } from "react"
+import { supabase } from "@/lib/supabaseClient"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Upload,
+  Download,
+  FileText,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+} from "lucide-react"
+
+interface FlashcardImportProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSuccess: () => void
+  deckId: string
+}
+
+interface ParsedCard {
+  front: string
+  back: string
+  valid: boolean
+  error?: string
+}
+
+export function FlashcardImport({
+  open,
+  onOpenChange,
+  onSuccess,
+  deckId,
+}: FlashcardImportProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [file, setFile] = useState<File | null>(null)
+  const [parsedCards, setParsedCards] = useState<ParsedCard[]>([])
+  const [importing, setImporting] = useState(false)
+  const [step, setStep] = useState<"upload" | "preview" | "done">("upload")
+  const [importResult, setImportResult] = useState({ success: 0, failed: 0 })
+
+  // 下載範本
+  const downloadTemplate = () => {
+    const template = `正面,背面
+apple,蘋果
+book,書本
+computer,電腦
+"Hello, how are you?",你好，你好嗎？
+光合作用的產物是什麼？,葡萄糖和氧氣`
+
+    const blob = new Blob(["\uFEFF" + template], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "flashcards-template.csv"
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // 解析 CSV
+  const parseCSV = (text: string): ParsedCard[] => {
+    const lines = text.split(/\r?\n/).filter((line) => line.trim())
+    const cards: ParsedCard[] = []
+
+    // 跳過標題行
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (!line) continue
+
+      // 解析 CSV（支援引號包裹的欄位）
+      const values = parseCSVLine(line)
+
+      if (values.length < 2) {
+        cards.push({
+          front: values[0] || "",
+          back: "",
+          valid: false,
+          error: "格式錯誤：缺少背面內容",
+        })
+        continue
+      }
+
+      const front = values[0].trim()
+      const back = values[1].trim()
+
+      if (!front) {
+        cards.push({
+          front,
+          back,
+          valid: false,
+          error: "正面不能為空",
+        })
+        continue
+      }
+
+      if (!back) {
+        cards.push({
+          front,
+          back,
+          valid: false,
+          error: "背面不能為空",
+        })
+        continue
+      }
+
+      cards.push({
+        front,
+        back,
+        valid: true,
+      })
+    }
+
+    return cards
+  }
+
+  // 解析單行 CSV（處理引號）
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = []
+    let current = ""
+    let inQuotes = false
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i]
+      const nextChar = line[i + 1]
+
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          // 轉義的引號
+          current += '"'
+          i++
+        } else {
+          // 切換引號狀態
+          inQuotes = !inQuotes
+        }
+      } else if (char === "," && !inQuotes) {
+        result.push(current)
+        current = ""
+      } else {
+        current += char
+      }
+    }
+    result.push(current)
+
+    return result
+  }
+
+  // 處理檔案上傳
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0]
+    if (!selectedFile) return
+
+    setFile(selectedFile)
+
+    // 讀取檔案
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const text = event.target?.result as string
+      const cards = parseCSV(text)
+      setParsedCards(cards)
+      setStep("preview")
+    }
+    reader.readAsText(selectedFile, "UTF-8")
+  }
+
+  // 執行匯入
+  const handleImport = async () => {
+    const validCards = parsedCards.filter((c) => c.valid)
+    if (validCards.length === 0) return
+
+    setImporting(true)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setImporting(false)
+      return
+    }
+
+    let success = 0
+    let failed = 0
+
+    // 批次插入
+    const cardsToInsert = validCards.map((card) => ({
+      user_id: user.id,
+      deck_id: deckId,
+      front: card.front,
+      back: card.back,
+      next_review_at: new Date().toISOString(),
+      interval: 0,
+      ease_factor: 2.5,
+      repetition_count: 0,
+    }))
+
+    const { error } = await supabase
+      .from("flashcards")
+      .insert(cardsToInsert)
+
+    if (error) {
+      failed = validCards.length
+    } else {
+      success = validCards.length
+    }
+
+    setImportResult({ success, failed })
+    setImporting(false)
+    setStep("done")
+  }
+
+  // 重置狀態
+  const resetState = () => {
+    setFile(null)
+    setParsedCards([])
+    setStep("upload")
+    setImportResult({ success: 0, failed: 0 })
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  // 關閉對話框
+  const handleClose = () => {
+    if (step === "done") {
+      onSuccess()
+    }
+    resetState()
+    onOpenChange(false)
+  }
+
+  const validCount = parsedCards.filter((c) => c.valid).length
+  const invalidCount = parsedCards.filter((c) => !c.valid).length
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>批次匯入卡片</DialogTitle>
+          <DialogDescription>
+            上傳 CSV 檔案批次新增記憶卡片
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* 步驟一：上傳 */}
+        {step === "upload" && (
+          <div className="space-y-4 py-4">
+            {/* 範本下載 */}
+            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-blue-600" />
+                <div>
+                  <p className="font-medium text-blue-800">CSV 範本</p>
+                  <p className="text-sm text-blue-600">
+                    下載範本檔案查看格式
+                  </p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={downloadTemplate}>
+                <Download className="w-4 h-4 mr-2" />
+                下載範本
+              </Button>
+            </div>
+
+            {/* 格式說明 */}
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="font-medium text-gray-800 mb-2">CSV 格式說明</p>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• 第一行為標題：正面,背面</li>
+                <li>• 每行一張卡片</li>
+                <li>• 內容含逗號請用引號包裹</li>
+                <li>• 編碼請使用 UTF-8</li>
+              </ul>
+            </div>
+
+            {/* 上傳區域 */}
+            <div
+              className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600 mb-1">點擊或拖曳檔案到此處</p>
+              <p className="text-sm text-gray-400">支援 .csv 檔案</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* 步驟二：預覽 */}
+        {step === "preview" && (
+          <div className="space-y-4 py-4">
+            {/* 統計 */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+                <span className="text-green-700">{validCount} 張有效</span>
+              </div>
+              {invalidCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-red-500" />
+                  <span className="text-red-700">{invalidCount} 張無效</span>
+                </div>
+              )}
+            </div>
+
+            {/* 預覽表格 */}
+            <div className="border rounded-lg max-h-[300px] overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600 w-10">
+                      #
+                    </th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">
+                      正面
+                    </th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">
+                      背面
+                    </th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600 w-20">
+                      狀態
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {parsedCards.map((card, index) => (
+                    <tr
+                      key={index}
+                      className={card.valid ? "" : "bg-red-50"}
+                    >
+                      <td className="px-3 py-2 text-gray-500">{index + 1}</td>
+                      <td className="px-3 py-2">
+                        <span className="line-clamp-2">{card.front}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="line-clamp-2">{card.back}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        {card.valid ? (
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <span
+                            className="text-red-500 text-xs"
+                            title={card.error}
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 無效項目警告 */}
+            {invalidCount > 0 && (
+              <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div className="text-sm text-amber-700">
+                  有 {invalidCount} 張卡片格式錯誤，將不會被匯入。
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 步驟三：完成 */}
+        {step === "done" && (
+          <div className="py-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              匯入完成！
+            </h3>
+            <p className="text-gray-600">
+              成功匯入 {importResult.success} 張卡片
+              {importResult.failed > 0 && (
+                <span className="text-red-600">
+                  ，{importResult.failed} 張失敗
+                </span>
+              )}
+            </p>
+          </div>
+        )}
+
+        <DialogFooter>
+          {step === "upload" && (
+            <Button variant="outline" onClick={handleClose}>
+              取消
+            </Button>
+          )}
+
+          {step === "preview" && (
+            <>
+              <Button variant="outline" onClick={resetState}>
+                重新選擇
+              </Button>
+              <Button
+                onClick={handleImport}
+                disabled={validCount === 0 || importing}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {importing ? "匯入中..." : `匯入 ${validCount} 張卡片`}
+              </Button>
+            </>
+          )}
+
+          {step === "done" && (
+            <Button
+              onClick={handleClose}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              完成
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
