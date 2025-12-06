@@ -133,6 +133,7 @@ var _s = __turbopack_context__.k.signature();
 function DashboardPage() {
     _s();
     const [userName, setUserName] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("");
+    const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(true);
     const [stats, setStats] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])({
         subjects: 0,
         questions: 0,
@@ -145,17 +146,35 @@ function DashboardPage() {
                 "DashboardPage.useEffect.fetchData": async ()=>{
                     // 取得用戶資訊
                     const { data: { user } } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabaseClient$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].auth.getUser();
-                    if (user) {
-                        setUserName(user.user_metadata?.full_name || "同學");
-                    }
-                    // 取得統計資料（之後連接真實資料）
-                    // 目前先用假資料
+                    if (!user) return;
+                    setUserName(user.user_metadata?.full_name || "同學");
+                    // 取得科目數量
+                    const { count: subjectsCount } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabaseClient$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from("subjects").select("*", {
+                        count: "exact",
+                        head: true
+                    }).eq("user_id", user.id);
+                    // 取得題目數量
+                    const { count: questionsCount } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabaseClient$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from("questions").select("*", {
+                        count: "exact",
+                        head: true
+                    }).eq("user_id", user.id);
+                    // 取得待複習題目數量（答錯過或標記複習的）
+                    const { count: wrongCount } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabaseClient$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from("questions").select("*", {
+                        count: "exact",
+                        head: true
+                    }).eq("user_id", user.id).or("wrong_count.gt.0,marked_for_review.eq.true");
+                    // 取得記憶卡片數量
+                    const { count: flashcardsCount } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabaseClient$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from("flashcards").select("*", {
+                        count: "exact",
+                        head: true
+                    }).eq("user_id", user.id);
                     setStats({
-                        subjects: 0,
-                        questions: 0,
-                        wrongQuestions: 0,
-                        flashcards: 0
+                        subjects: subjectsCount || 0,
+                        questions: questionsCount || 0,
+                        wrongQuestions: wrongCount || 0,
+                        flashcards: flashcardsCount || 0
                     });
+                    setLoading(false);
                 }
             }["DashboardPage.useEffect.fetchData"];
             fetchData();
@@ -205,7 +224,7 @@ function DashboardPage() {
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                        lineNumber: 74,
+                        lineNumber: 100,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -213,13 +232,13 @@ function DashboardPage() {
                         children: "今天想要學習什麼呢？"
                     }, void 0, false, {
                         fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                        lineNumber: 77,
+                        lineNumber: 103,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                lineNumber: 73,
+                lineNumber: 99,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -234,7 +253,7 @@ function DashboardPage() {
                                         children: stat.title
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                                        lineNumber: 87,
+                                        lineNumber: 113,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -243,43 +262,49 @@ function DashboardPage() {
                                             className: `w-4 h-4 ${stat.color}`
                                         }, void 0, false, {
                                             fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                                            lineNumber: 91,
+                                            lineNumber: 117,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                                        lineNumber: 90,
+                                        lineNumber: 116,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                                lineNumber: 86,
+                                lineNumber: 112,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
-                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                children: loading ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "h-8 w-12 bg-gray-200 animate-pulse rounded"
+                                }, void 0, false, {
+                                    fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
+                                    lineNumber: 122,
+                                    columnNumber: 17
+                                }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "text-2xl font-bold",
                                     children: stat.value
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                                    lineNumber: 95,
-                                    columnNumber: 15
+                                    lineNumber: 124,
+                                    columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                                lineNumber: 94,
+                                lineNumber: 120,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, stat.title, true, {
                         fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                        lineNumber: 85,
+                        lineNumber: 111,
                         columnNumber: 11
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                lineNumber: 83,
+                lineNumber: 109,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -289,12 +314,12 @@ function DashboardPage() {
                             children: "快速開始"
                         }, void 0, false, {
                             fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                            lineNumber: 104,
+                            lineNumber: 134,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                        lineNumber: 103,
+                        lineNumber: 133,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -309,7 +334,7 @@ function DashboardPage() {
                                     color: "blue"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                                    lineNumber: 108,
+                                    lineNumber: 138,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(QuickStartCard, {
@@ -320,7 +345,7 @@ function DashboardPage() {
                                     color: "green"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                                    lineNumber: 115,
+                                    lineNumber: 145,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(QuickStartCard, {
@@ -331,7 +356,7 @@ function DashboardPage() {
                                     color: "red"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                                    lineNumber: 122,
+                                    lineNumber: 152,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(QuickStartCard, {
@@ -342,34 +367,34 @@ function DashboardPage() {
                                     color: "amber"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                                    lineNumber: 129,
+                                    lineNumber: 159,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                            lineNumber: 107,
+                            lineNumber: 137,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                        lineNumber: 106,
+                        lineNumber: 136,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                lineNumber: 102,
+                lineNumber: 132,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-        lineNumber: 71,
+        lineNumber: 97,
         columnNumber: 5
     }, this);
 }
-_s(DashboardPage, "2M0QsUjcQFKnhclom9vvLNPOa7A=");
+_s(DashboardPage, "onis7RB1Da4cDCpmrwT9mrezcAA=");
 _c = DashboardPage;
 function QuickStartCard({ href, icon: Icon, title, description, color }) {
     const colorClasses = {
@@ -392,7 +417,7 @@ function QuickStartCard({ href, icon: Icon, title, description, color }) {
                 className: `w-6 h-6 ${iconColorClasses[color]} mb-2`
             }, void 0, false, {
                 fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                lineNumber: 175,
+                lineNumber: 205,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -400,7 +425,7 @@ function QuickStartCard({ href, icon: Icon, title, description, color }) {
                 children: title
             }, void 0, false, {
                 fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                lineNumber: 176,
+                lineNumber: 206,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -408,13 +433,13 @@ function QuickStartCard({ href, icon: Icon, title, description, color }) {
                 children: description
             }, void 0, false, {
                 fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-                lineNumber: 177,
+                lineNumber: 207,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/app/(dashboard)/dashboard/page.tsx",
-        lineNumber: 171,
+        lineNumber: 201,
         columnNumber: 5
     }, this);
 }

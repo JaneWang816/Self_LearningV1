@@ -8,6 +8,7 @@ import { BookOpen, FileQuestion, XCircle, Lightbulb } from "lucide-react"
 
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string>("")
+  const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     subjects: 0,
     questions: 0,
@@ -19,18 +20,43 @@ export default function DashboardPage() {
     const fetchData = async () => {
       // 取得用戶資訊
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserName(user.user_metadata?.full_name || "同學")
-      }
+      if (!user) return
 
-      // 取得統計資料（之後連接真實資料）
-      // 目前先用假資料
+      setUserName(user.user_metadata?.full_name || "同學")
+
+      // 取得科目數量
+      const { count: subjectsCount } = await supabase
+        .from("subjects")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+
+      // 取得題目數量
+      const { count: questionsCount } = await supabase
+        .from("questions")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+
+      // 取得待複習題目數量（答錯過或標記複習的）
+      const { count: wrongCount } = await supabase
+        .from("questions")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .or("wrong_count.gt.0,marked_for_review.eq.true")
+
+      // 取得記憶卡片數量
+      const { count: flashcardsCount } = await supabase
+        .from("flashcards")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+
       setStats({
-        subjects: 0,
-        questions: 0,
-        wrongQuestions: 0,
-        flashcards: 0,
+        subjects: subjectsCount || 0,
+        questions: questionsCount || 0,
+        wrongQuestions: wrongCount || 0,
+        flashcards: flashcardsCount || 0,
       })
+
+      setLoading(false)
     }
 
     fetchData()
@@ -92,7 +118,11 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              {loading ? (
+                <div className="h-8 w-12 bg-gray-200 animate-pulse rounded" />
+              ) : (
+                <div className="text-2xl font-bold">{stat.value}</div>
+              )}
             </CardContent>
           </Card>
         ))}
