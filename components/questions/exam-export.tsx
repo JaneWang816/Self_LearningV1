@@ -133,21 +133,23 @@ export function ExamExport({
   }
 
   // 格式化答案顯示
-  const formatAnswer = (question: Question) => {
+  const formatAnswer = (question: Question): string => {
     const typeName = getTypeName(question.question_type_id)
     const answer = question.answer
+
+    if (!answer) return ""
 
     if (typeName === "true_false") {
       return answer === "true" ? "O" : "X"
     }
     if (typeName === "single_choice") {
-      return answer as string
+      return String(answer)
     }
     if (typeName === "multiple_choice") {
-      return Array.isArray(answer) ? answer.join("") : answer
+      return Array.isArray(answer) ? answer.join("") : String(answer)
     }
     if (typeName === "fill_in_blank" || typeName === "essay") {
-      return answer as string
+      return String(answer)
     }
     return String(answer)
   }
@@ -476,7 +478,7 @@ export function ExamExport({
                               {includeAnswer && (
                                 <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
                                   <span className="text-green-700 font-medium">答案：</span>
-                                  <span className="text-green-700">{answer}</span>
+                                  <span className="text-green-700">{String(answer)}</span>
                                   {question.explanation && (
                                     <div className="mt-1 text-sm text-green-600">
                                       <span className="font-medium">解析：</span>
