@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="512" height="512" rx="96" fill="#2563eb"/>
+  
+  <!-- 書本圖示 -->
+  <g transform="translate(96, 96)">
+    <!-- 左頁 -->
+    <path d="M160 40 L40 70 L40 280 L160 250 Z" fill="white" opacity="0.9"/>
+    <!-- 右頁 -->
+    <path d="M160 40 L280 70 L280 280 L160 250 Z" fill="white"/>
+    <!-- 書脊 -->
+    <path d="M160 40 L160 250" stroke="#2563eb" stroke-width="4"/>
+    <!-- 文字線條 -->
+    <line x1="70" y1="110" x2="130" y2="100" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+    <line x1="70" y1="140" x2="120" y2="132" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+    <line x1="70" y1="170" x2="110" y2="164" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+    <line x1="190" y1="100" x2="250" y2="110" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+    <line x1="190" y1="132" x2="240" y2="140" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+    <line x1="190" y1="164" x2="230" y2="170" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  
+  <!-- 勾勾符號 -->
+  <circle cx="380" cy="380" r="80" fill="#22c55e"/>
+  <path d="M340 380 L365 405 L420 350" stroke="white" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
