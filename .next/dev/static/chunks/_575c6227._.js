@@ -1403,6 +1403,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$re
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash2$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/trash-2.js [app-client] (ecmascript) <export default as Trash2>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$rotate$2d$ccw$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__RotateCcw$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/rotate-ccw.js [app-client] (ecmascript) <export default as RotateCcw>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$upload$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Upload$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/upload.js [app-client] (ecmascript) <export default as Upload>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$clipboard$2d$list$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ClipboardList$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/clipboard-list.js [app-client] (ecmascript) <export default as ClipboardList>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$flashcards$2f$flashcard$2d$import$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/flashcards/flashcard-import.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$sm2$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/sm2.ts [app-client] (ecmascript)");
 ;
@@ -1579,12 +1580,12 @@ function DeckDetailPage() {
                 className: "w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"
             }, void 0, false, {
                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                lineNumber: 248,
+                lineNumber: 249,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-            lineNumber: 247,
+            lineNumber: 248,
             columnNumber: 7
         }, this);
     }
@@ -1608,19 +1609,19 @@ function DeckDetailPage() {
                                             className: "w-4 h-4 mr-2"
                                         }, void 0, false, {
                                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                            lineNumber: 262,
+                                            lineNumber: 263,
                                             columnNumber: 15
                                         }, this),
                                         "返回"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                    lineNumber: 261,
+                                    lineNumber: 262,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                lineNumber: 260,
+                                lineNumber: 261,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1630,7 +1631,7 @@ function DeckDetailPage() {
                                         children: deck.title
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                        lineNumber: 267,
+                                        lineNumber: 268,
                                         columnNumber: 13
                                     }, this),
                                     deck.description && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1638,19 +1639,19 @@ function DeckDetailPage() {
                                         children: deck.description
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                        lineNumber: 269,
+                                        lineNumber: 270,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                lineNumber: 266,
+                                lineNumber: 267,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                        lineNumber: 259,
+                        lineNumber: 260,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1664,14 +1665,14 @@ function DeckDetailPage() {
                                         className: "w-4 h-4 mr-2"
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                        lineNumber: 278,
+                                        lineNumber: 279,
                                         columnNumber: 13
                                     }, this),
                                     "批次匯入"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                lineNumber: 274,
+                                lineNumber: 275,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1682,14 +1683,14 @@ function DeckDetailPage() {
                                         className: "w-4 h-4 mr-2"
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                        lineNumber: 285,
+                                        lineNumber: 286,
                                         columnNumber: 13
                                     }, this),
                                     "新增卡片"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                lineNumber: 281,
+                                lineNumber: 282,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1701,26 +1702,45 @@ function DeckDetailPage() {
                                         className: "w-4 h-4 mr-2"
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                        lineNumber: 293,
+                                        lineNumber: 294,
                                         columnNumber: 13
                                     }, this),
-                                    dueCount > 0 ? `開始複習 (${dueCount})` : "開始複習"
+                                    dueCount > 0 ? `複習 (${dueCount})` : "複習"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                lineNumber: 288,
+                                lineNumber: 289,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                className: "bg-purple-600 hover:bg-purple-700",
+                                onClick: ()=>router.push(`/dashboard/flashcards/${deckId}/test`),
+                                disabled: cards.length < 4,
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$clipboard$2d$list$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ClipboardList$3e$__["ClipboardList"], {
+                                        className: "w-4 h-4 mr-2"
+                                    }, void 0, false, {
+                                        fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
+                                        lineNumber: 302,
+                                        columnNumber: 13
+                                    }, this),
+                                    "測驗"
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
+                                lineNumber: 297,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                        lineNumber: 273,
+                        lineNumber: 274,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                lineNumber: 258,
+                lineNumber: 259,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1738,7 +1758,7 @@ function DeckDetailPage() {
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                            lineNumber: 302,
+                            lineNumber: 311,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1751,7 +1771,7 @@ function DeckDetailPage() {
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                            lineNumber: 312,
+                            lineNumber: 321,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1764,18 +1784,18 @@ function DeckDetailPage() {
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                            lineNumber: 322,
+                            lineNumber: 331,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                    lineNumber: 301,
+                    lineNumber: 310,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                lineNumber: 300,
+                lineNumber: 309,
                 columnNumber: 7
             }, this),
             cards.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -1787,7 +1807,7 @@ function DeckDetailPage() {
                             children: "尚未建立卡片"
                         }, void 0, false, {
                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                            lineNumber: 339,
+                            lineNumber: 348,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1795,7 +1815,7 @@ function DeckDetailPage() {
                             children: "開始新增記憶卡片吧！"
                         }, void 0, false, {
                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                            lineNumber: 342,
+                            lineNumber: 351,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1806,25 +1826,25 @@ function DeckDetailPage() {
                                     className: "w-4 h-4 mr-2"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                    lineNumber: 349,
+                                    lineNumber: 358,
                                     columnNumber: 15
                                 }, this),
                                 "新增卡片"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                            lineNumber: 345,
+                            lineNumber: 354,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                    lineNumber: 338,
+                    lineNumber: 347,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                lineNumber: 337,
+                lineNumber: 346,
                 columnNumber: 9
             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "space-y-3",
@@ -1844,12 +1864,12 @@ function DeckDetailPage() {
                         onReset: ()=>resetCard(card)
                     }, card.id, false, {
                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                        lineNumber: 367,
+                        lineNumber: 376,
                         columnNumber: 13
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                lineNumber: 355,
+                lineNumber: 364,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -1864,20 +1884,20 @@ function DeckDetailPage() {
                                     children: editingCard ? "編輯卡片" : "新增卡片"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                    lineNumber: 383,
+                                    lineNumber: 392,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
                                     children: "輸入卡片正面（問題）和背面（答案）"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                    lineNumber: 386,
+                                    lineNumber: 395,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                            lineNumber: 382,
+                            lineNumber: 391,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1891,7 +1911,7 @@ function DeckDetailPage() {
                                             children: "正面（問題）*"
                                         }, void 0, false, {
                                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                            lineNumber: 393,
+                                            lineNumber: 402,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -1902,13 +1922,13 @@ function DeckDetailPage() {
                                             rows: 3
                                         }, void 0, false, {
                                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                            lineNumber: 394,
+                                            lineNumber: 403,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                    lineNumber: 392,
+                                    lineNumber: 401,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1919,7 +1939,7 @@ function DeckDetailPage() {
                                             children: "背面（答案）*"
                                         }, void 0, false, {
                                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                            lineNumber: 403,
+                                            lineNumber: 412,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -1930,19 +1950,19 @@ function DeckDetailPage() {
                                             rows: 3
                                         }, void 0, false, {
                                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                            lineNumber: 404,
+                                            lineNumber: 413,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                    lineNumber: 402,
+                                    lineNumber: 411,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                            lineNumber: 391,
+                            lineNumber: 400,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -1953,7 +1973,7 @@ function DeckDetailPage() {
                                     children: "取消"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                    lineNumber: 415,
+                                    lineNumber: 424,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1963,24 +1983,24 @@ function DeckDetailPage() {
                                     children: saving ? "儲存中..." : "儲存"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                    lineNumber: 418,
+                                    lineNumber: 427,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                            lineNumber: 414,
+                            lineNumber: 423,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                    lineNumber: 381,
+                    lineNumber: 390,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                lineNumber: 380,
+                lineNumber: 389,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialog"], {
@@ -1994,20 +2014,20 @@ function DeckDetailPage() {
                                     children: "確定要刪除嗎？"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                    lineNumber: 433,
+                                    lineNumber: 442,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
                                     children: "刪除此卡片後無法復原。"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                    lineNumber: 434,
+                                    lineNumber: 443,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                            lineNumber: 432,
+                            lineNumber: 441,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -2016,7 +2036,7 @@ function DeckDetailPage() {
                                     children: "取消"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                    lineNumber: 439,
+                                    lineNumber: 448,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
@@ -2026,24 +2046,24 @@ function DeckDetailPage() {
                                     children: deleteLoading ? "刪除中..." : "確定刪除"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                    lineNumber: 440,
+                                    lineNumber: 449,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                            lineNumber: 438,
+                            lineNumber: 447,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                    lineNumber: 431,
+                    lineNumber: 440,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                lineNumber: 430,
+                lineNumber: 439,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$flashcards$2f$flashcard$2d$import$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FlashcardImport"], {
@@ -2053,13 +2073,13 @@ function DeckDetailPage() {
                 deckId: deckId
             }, void 0, false, {
                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                lineNumber: 452,
+                lineNumber: 461,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-        lineNumber: 256,
+        lineNumber: 257,
         columnNumber: 5
     }, this);
 }
@@ -2094,7 +2114,7 @@ function FlashcardItem({ card, status, onEdit, onDelete, onReset }) {
                                         children: status.text
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                        lineNumber: 489,
+                                        lineNumber: 498,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2102,13 +2122,13 @@ function FlashcardItem({ card, status, onEdit, onDelete, onReset }) {
                                         children: "點擊翻轉"
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                        lineNumber: 492,
+                                        lineNumber: 501,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                lineNumber: 488,
+                                lineNumber: 497,
                                 columnNumber: 13
                             }, this),
                             !flipped ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2118,7 +2138,7 @@ function FlashcardItem({ card, status, onEdit, onDelete, onReset }) {
                                         children: "正面"
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                        lineNumber: 499,
+                                        lineNumber: 508,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2126,13 +2146,13 @@ function FlashcardItem({ card, status, onEdit, onDelete, onReset }) {
                                         children: card.front
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                        lineNumber: 500,
+                                        lineNumber: 509,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                lineNumber: 498,
+                                lineNumber: 507,
                                 columnNumber: 15
                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 children: [
@@ -2141,7 +2161,7 @@ function FlashcardItem({ card, status, onEdit, onDelete, onReset }) {
                                         children: "背面"
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                        lineNumber: 504,
+                                        lineNumber: 513,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2149,13 +2169,13 @@ function FlashcardItem({ card, status, onEdit, onDelete, onReset }) {
                                         children: card.back
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                        lineNumber: 505,
+                                        lineNumber: 514,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                lineNumber: 503,
+                                lineNumber: 512,
                                 columnNumber: 15
                             }, this),
                             (card.repetition_count || 0) > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2169,13 +2189,13 @@ function FlashcardItem({ card, status, onEdit, onDelete, onReset }) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                lineNumber: 511,
+                                lineNumber: 520,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                        lineNumber: 484,
+                        lineNumber: 493,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2190,12 +2210,12 @@ function FlashcardItem({ card, status, onEdit, onDelete, onReset }) {
                                     className: "h-4 w-4"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                    lineNumber: 525,
+                                    lineNumber: 534,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                lineNumber: 519,
+                                lineNumber: 528,
                                 columnNumber: 13
                             }, this),
                             showMenu && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -2205,7 +2225,7 @@ function FlashcardItem({ card, status, onEdit, onDelete, onReset }) {
                                         onClick: ()=>setShowMenu(false)
                                     }, void 0, false, {
                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                        lineNumber: 530,
+                                        lineNumber: 539,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2222,14 +2242,14 @@ function FlashcardItem({ card, status, onEdit, onDelete, onReset }) {
                                                         className: "h-4 w-4 mr-2"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                                        lineNumber: 542,
+                                                        lineNumber: 551,
                                                         columnNumber: 21
                                                     }, this),
                                                     "編輯"
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                                lineNumber: 535,
+                                                lineNumber: 544,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2243,14 +2263,14 @@ function FlashcardItem({ card, status, onEdit, onDelete, onReset }) {
                                                         className: "h-4 w-4 mr-2"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                                        lineNumber: 552,
+                                                        lineNumber: 561,
                                                         columnNumber: 21
                                                     }, this),
                                                     "重設進度"
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                                lineNumber: 545,
+                                                lineNumber: 554,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2264,20 +2284,20 @@ function FlashcardItem({ card, status, onEdit, onDelete, onReset }) {
                                                         className: "h-4 w-4 mr-2"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                                        lineNumber: 562,
+                                                        lineNumber: 571,
                                                         columnNumber: 21
                                                     }, this),
                                                     "刪除"
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                                lineNumber: 555,
+                                                lineNumber: 564,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                                        lineNumber: 534,
+                                        lineNumber: 543,
                                         columnNumber: 17
                                     }, this)
                                 ]
@@ -2285,23 +2305,23 @@ function FlashcardItem({ card, status, onEdit, onDelete, onReset }) {
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                        lineNumber: 518,
+                        lineNumber: 527,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-                lineNumber: 482,
+                lineNumber: 491,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-            lineNumber: 481,
+            lineNumber: 490,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/app/(dashboard)/dashboard/flashcards/[deckId]/page.tsx",
-        lineNumber: 480,
+        lineNumber: 489,
         columnNumber: 5
     }, this);
 }

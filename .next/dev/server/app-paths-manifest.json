@@ -1,8 +1,7 @@
 {
   "/(auth)/login/page": "app/(auth)/login/page.js",
   "/(dashboard)/dashboard/flashcards/[deckId]/page": "app/(dashboard)/dashboard/flashcards/[deckId]/page.js",
-  "/(dashboard)/dashboard/flashcards/[deckId]/review/page": "app/(dashboard)/dashboard/flashcards/[deckId]/review/page.js",
+  "/(dashboard)/dashboard/flashcards/[deckId]/test/page": "app/(dashboard)/dashboard/flashcards/[deckId]/test/page.js",
   "/(dashboard)/dashboard/flashcards/page": "app/(dashboard)/dashboard/flashcards/page.js",
-  "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js",
-  "/(dashboard)/dashboard/subjects/page": "app/(dashboard)/dashboard/subjects/page.js"
+  "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js"
 }

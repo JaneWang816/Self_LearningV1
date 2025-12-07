@@ -38,6 +38,7 @@ import {
   Clock,
   RotateCcw,
   Upload,
+  ClipboardList,
 } from "lucide-react"
 import { FlashcardImport } from "@/components/flashcards/flashcard-import"
 import { getNextReviewText } from "@/lib/sm2"
@@ -291,7 +292,15 @@ export default function DeckDetailPage() {
             disabled={cards.length === 0}
           >
             <Play className="w-4 h-4 mr-2" />
-            {dueCount > 0 ? `開始複習 (${dueCount})` : "開始複習"}
+            {dueCount > 0 ? `複習 (${dueCount})` : "複習"}
+          </Button>
+          <Button
+            className="bg-purple-600 hover:bg-purple-700"
+            onClick={() => router.push(`/dashboard/flashcards/${deckId}/test`)}
+            disabled={cards.length < 4}
+          >
+            <ClipboardList className="w-4 h-4 mr-2" />
+            測驗
           </Button>
         </div>
       </div>
