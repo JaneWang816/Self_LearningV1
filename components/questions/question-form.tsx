@@ -138,7 +138,7 @@ export function QuestionForm({
       setQuestionImagePreview(imgUrl || null)
 
       if (question.options) {
-        const opts = question.options as Option[]
+        const opts = question.options as unknown as Option[]
         setOptions(opts)
         setOptionImageFiles(opts.map(() => null))
       }
