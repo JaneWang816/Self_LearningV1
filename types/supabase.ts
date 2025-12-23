@@ -1,5 +1,5 @@
 // types/supabase.ts
-// 對應 schema_v3.sql 的 TypeScript 類型定義（合併版）
+// 對應 schema_v3.sql 的 TypeScript 類型定義（基於原有檔案最小修改）
 
 export type Json =
   | string
@@ -10,7 +10,7 @@ export type Json =
   | Json[]
 
 // ============================================
-// 模組類型
+// 新增：模組類型
 // ============================================
 export type ModuleType = 
   | 'journal' 
@@ -24,15 +24,12 @@ export type ModuleType =
 export interface Database {
   public: {
     Tables: {
-      // ==========================================
-      // 用戶資料
-      // ==========================================
       profiles: {
         Row: {
           id: string
           nickname: string | null
           avatar_url: string | null
-          enabled_modules: ModuleType[] | null
+          enabled_modules: ModuleType[] | null  // 新增
           created_at: string | null
           updated_at: string | null
         }
@@ -40,7 +37,7 @@ export interface Database {
           id: string
           nickname?: string | null
           avatar_url?: string | null
-          enabled_modules?: ModuleType[] | null
+          enabled_modules?: ModuleType[] | null  // 新增
           created_at?: string | null
           updated_at?: string | null
         }
@@ -48,7 +45,7 @@ export interface Database {
           id?: string
           nickname?: string | null
           avatar_url?: string | null
-          enabled_modules?: ModuleType[] | null
+          enabled_modules?: ModuleType[] | null  // 新增
           created_at?: string | null
           updated_at?: string | null
         }
@@ -61,436 +58,6 @@ export interface Database {
           }
         ]
       }
-
-      // ==========================================
-      // 日誌模組
-      // ==========================================
-      journals_life: {
-        Row: {
-          id: string
-          user_id: string
-          title: string | null
-          content: string
-          mood: number | null
-          date: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          title?: string | null
-          content: string
-          mood?: number | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          title?: string | null
-          content?: string
-          mood?: number | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-
-      journals_learning: {
-        Row: {
-          id: string
-          user_id: string
-          subject_id: string | null
-          title: string | null
-          content: string
-          duration_minutes: number | null
-          difficulty: number | null
-          date: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          subject_id?: string | null
-          title?: string | null
-          content: string
-          duration_minutes?: number | null
-          difficulty?: number | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          subject_id?: string | null
-          title?: string | null
-          content?: string
-          duration_minutes?: number | null
-          difficulty?: number | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-
-      journals_reading: {
-        Row: {
-          id: string
-          user_id: string
-          book_title: string
-          author: string | null
-          content: string | null
-          pages_read: number | null
-          current_page: number | null
-          total_pages: number | null
-          rating: number | null
-          is_finished: boolean
-          date: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          book_title: string
-          author?: string | null
-          content?: string | null
-          pages_read?: number | null
-          current_page?: number | null
-          total_pages?: number | null
-          rating?: number | null
-          is_finished?: boolean
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          book_title?: string
-          author?: string | null
-          content?: string | null
-          pages_read?: number | null
-          current_page?: number | null
-          total_pages?: number | null
-          rating?: number | null
-          is_finished?: boolean
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-
-      journals_gratitude: {
-        Row: {
-          id: string
-          user_id: string
-          content: string
-          date: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          content: string
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          content?: string
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-
-      // ==========================================
-      // 習慣模組
-      // ==========================================
-      habits: {
-        Row: {
-          id: string
-          user_id: string
-          title: string
-          description: string | null
-          icon: string | null
-          color: string | null
-          frequency: 'daily' | 'weekly'
-          target_days: number[]
-          is_active: boolean
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          title: string
-          description?: string | null
-          icon?: string | null
-          color?: string | null
-          frequency?: 'daily' | 'weekly'
-          target_days?: number[]
-          is_active?: boolean
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          title?: string
-          description?: string | null
-          icon?: string | null
-          color?: string | null
-          frequency?: 'daily' | 'weekly'
-          target_days?: number[]
-          is_active?: boolean
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-
-      habit_logs: {
-        Row: {
-          id: string
-          habit_id: string
-          user_id: string
-          date: string
-          completed: boolean
-          note: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          habit_id: string
-          user_id: string
-          date?: string
-          completed?: boolean
-          note?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          habit_id?: string
-          user_id?: string
-          date?: string
-          completed?: boolean
-          note?: string | null
-          created_at?: string | null
-        }
-      }
-
-      // ==========================================
-      // 任務模組
-      // ==========================================
-      tasks: {
-        Row: {
-          id: string
-          user_id: string
-          title: string
-          description: string | null
-          is_important: boolean
-          is_urgent: boolean
-          due_date: string | null
-          completed_at: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          title: string
-          description?: string | null
-          is_important?: boolean
-          is_urgent?: boolean
-          due_date?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          title?: string
-          description?: string | null
-          is_important?: boolean
-          is_urgent?: boolean
-          due_date?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-
-      // ==========================================
-      // 課表模組
-      // ==========================================
-      schedule_slots: {
-        Row: {
-          id: string
-          user_id: string
-          day_of_week: number
-          slot_number: number
-          subject_name: string
-          teacher: string | null
-          location: string | null
-          note: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          day_of_week: number
-          slot_number: number
-          subject_name: string
-          teacher?: string | null
-          location?: string | null
-          note?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          day_of_week?: number
-          slot_number?: number
-          subject_name?: string
-          teacher?: string | null
-          location?: string | null
-          note?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-
-      // ==========================================
-      // 健康模組
-      // ==========================================
-      health_exercises: {
-        Row: {
-          id: string
-          user_id: string
-          exercise_type: string
-          duration_minutes: number | null
-          distance_km: number | null
-          calories: number | null
-          note: string | null
-          date: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          exercise_type: string
-          duration_minutes?: number | null
-          distance_km?: number | null
-          calories?: number | null
-          note?: string | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          exercise_type?: string
-          duration_minutes?: number | null
-          distance_km?: number | null
-          calories?: number | null
-          note?: string | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-
-      health_metrics: {
-        Row: {
-          id: string
-          user_id: string
-          metric_type: 'weight' | 'blood_pressure' | 'sleep' | 'water'
-          value_primary: number
-          value_secondary: number | null
-          note: string | null
-          date: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          metric_type: 'weight' | 'blood_pressure' | 'sleep' | 'water'
-          value_primary: number
-          value_secondary?: number | null
-          note?: string | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          metric_type?: 'weight' | 'blood_pressure' | 'sleep' | 'water'
-          value_primary?: number
-          value_secondary?: number | null
-          note?: string | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-
-      // ==========================================
-      // 收支模組
-      // ==========================================
-      finance_records: {
-        Row: {
-          id: string
-          user_id: string
-          type: 'income' | 'expense'
-          category: string
-          amount: number
-          description: string | null
-          date: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          type: 'income' | 'expense'
-          category: string
-          amount: number
-          description?: string | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          type?: 'income' | 'expense'
-          category?: string
-          amount?: number
-          description?: string | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-
-      // ==========================================
-      // 學習系統（保留原有欄位）
-      // ==========================================
       subjects: {
         Row: {
           id: string
@@ -528,7 +95,6 @@ export interface Database {
           }
         ]
       }
-
       topics: {
         Row: {
           id: string
@@ -572,7 +138,6 @@ export interface Database {
           }
         ]
       }
-
       units: {
         Row: {
           id: string
@@ -622,7 +187,6 @@ export interface Database {
           }
         ]
       }
-
       question_types: {
         Row: {
           id: string
@@ -644,7 +208,6 @@ export interface Database {
         }
         Relationships: []
       }
-
       questions: {
         Row: {
           id: string
@@ -733,7 +296,6 @@ export interface Database {
           }
         ]
       }
-
       question_topics: {
         Row: {
           question_id: string
@@ -765,7 +327,6 @@ export interface Database {
           }
         ]
       }
-
       decks: {
         Row: {
           id: string
@@ -800,7 +361,6 @@ export interface Database {
           }
         ]
       }
-
       flashcards: {
         Row: {
           id: string
@@ -865,6 +425,427 @@ export interface Database {
           }
         ]
       }
+
+      // ============================================
+      // 新增：日誌模組
+      // ============================================
+      journals_life: {
+        Row: {
+          id: string
+          user_id: string
+          title: string | null
+          content: string
+          mood: number | null
+          date: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title?: string | null
+          content: string
+          mood?: number | null
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string | null
+          content?: string
+          mood?: number | null
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+      journals_learning: {
+        Row: {
+          id: string
+          user_id: string
+          subject_id: string | null
+          title: string | null
+          content: string
+          duration_minutes: number | null
+          difficulty: number | null
+          date: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          subject_id?: string | null
+          title?: string | null
+          content: string
+          duration_minutes?: number | null
+          difficulty?: number | null
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          subject_id?: string | null
+          title?: string | null
+          content?: string
+          duration_minutes?: number | null
+          difficulty?: number | null
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+      journals_reading: {
+        Row: {
+          id: string
+          user_id: string
+          book_title: string
+          author: string | null
+          content: string | null
+          pages_read: number | null
+          current_page: number | null
+          total_pages: number | null
+          rating: number | null
+          is_finished: boolean
+          date: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          book_title: string
+          author?: string | null
+          content?: string | null
+          pages_read?: number | null
+          current_page?: number | null
+          total_pages?: number | null
+          rating?: number | null
+          is_finished?: boolean
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          book_title?: string
+          author?: string | null
+          content?: string | null
+          pages_read?: number | null
+          current_page?: number | null
+          total_pages?: number | null
+          rating?: number | null
+          is_finished?: boolean
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+      journals_gratitude: {
+        Row: {
+          id: string
+          user_id: string
+          content: string
+          date: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          content: string
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          content?: string
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+
+      // ============================================
+      // 新增：習慣模組
+      // ============================================
+      habits: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          description: string | null
+          icon: string | null
+          color: string | null
+          frequency: string
+          target_days: number[]
+          is_active: boolean
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          description?: string | null
+          icon?: string | null
+          color?: string | null
+          frequency?: string
+          target_days?: number[]
+          is_active?: boolean
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          description?: string | null
+          icon?: string | null
+          color?: string | null
+          frequency?: string
+          target_days?: number[]
+          is_active?: boolean
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+      habit_logs: {
+        Row: {
+          id: string
+          habit_id: string
+          user_id: string
+          date: string
+          completed: boolean
+          note: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          habit_id: string
+          user_id: string
+          date?: string
+          completed?: boolean
+          note?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          habit_id?: string
+          user_id?: string
+          date?: string
+          completed?: boolean
+          note?: string | null
+          created_at?: string | null
+        }
+      }
+
+      // ============================================
+      // 新增：任務模組
+      // ============================================
+      tasks: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          description: string | null
+          is_important: boolean
+          is_urgent: boolean
+          due_date: string | null
+          completed_at: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          description?: string | null
+          is_important?: boolean
+          is_urgent?: boolean
+          due_date?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          description?: string | null
+          is_important?: boolean
+          is_urgent?: boolean
+          due_date?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+
+      // ============================================
+      // 新增：課表模組
+      // ============================================
+      schedule_slots: {
+        Row: {
+          id: string
+          user_id: string
+          day_of_week: number
+          slot_number: number
+          subject_name: string
+          teacher: string | null
+          location: string | null
+          note: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          day_of_week: number
+          slot_number: number
+          subject_name: string
+          teacher?: string | null
+          location?: string | null
+          note?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          day_of_week?: number
+          slot_number?: number
+          subject_name?: string
+          teacher?: string | null
+          location?: string | null
+          note?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+
+      // ============================================
+      // 新增：健康模組
+      // ============================================
+      health_exercises: {
+        Row: {
+          id: string
+          user_id: string
+          exercise_type: string
+          duration_minutes: number | null
+          distance_km: number | null
+          calories: number | null
+          note: string | null
+          date: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          exercise_type: string
+          duration_minutes?: number | null
+          distance_km?: number | null
+          calories?: number | null
+          note?: string | null
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          exercise_type?: string
+          duration_minutes?: number | null
+          distance_km?: number | null
+          calories?: number | null
+          note?: string | null
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+      health_metrics: {
+        Row: {
+          id: string
+          user_id: string
+          metric_type: string
+          value_primary: number
+          value_secondary: number | null
+          note: string | null
+          date: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          metric_type: string
+          value_primary: number
+          value_secondary?: number | null
+          note?: string | null
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          metric_type?: string
+          value_primary?: number
+          value_secondary?: number | null
+          note?: string | null
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+
+      // ============================================
+      // 新增：收支模組
+      // ============================================
+      finance_records: {
+        Row: {
+          id: string
+          user_id: string
+          type: string
+          category: string
+          amount: number
+          description: string | null
+          date: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: string
+          category: string
+          amount: number
+          description?: string | null
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: string
+          category?: string
+          amount?: number
+          description?: string | null
+          date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -882,7 +863,7 @@ export interface Database {
 }
 
 // ============================================
-// 便利類型別名
+// 便利型別
 // ============================================
 
 export type Tables<T extends keyof Database['public']['Tables']> = 
@@ -895,36 +876,9 @@ export type UpdateTables<T extends keyof Database['public']['Tables']> =
   Database['public']['Tables'][T]['Update']
 
 // ============================================
-// 常用類型別名
+// 常用型別別名（原有）
 // ============================================
-
-// 用戶
 export type Profile = Tables<'profiles'>
-
-// 日誌
-export type JournalLife = Tables<'journals_life'>
-export type JournalLearning = Tables<'journals_learning'>
-export type JournalReading = Tables<'journals_reading'>
-export type JournalGratitude = Tables<'journals_gratitude'>
-
-// 習慣
-export type Habit = Tables<'habits'>
-export type HabitLog = Tables<'habit_logs'>
-
-// 任務
-export type Task = Tables<'tasks'>
-
-// 課表
-export type ScheduleSlot = Tables<'schedule_slots'>
-
-// 健康
-export type HealthExercise = Tables<'health_exercises'>
-export type HealthMetric = Tables<'health_metrics'>
-
-// 收支
-export type FinanceRecord = Tables<'finance_records'>
-
-// 學習系統
 export type Subject = Tables<'subjects'>
 export type Topic = Tables<'topics'>
 export type Unit = Tables<'units'>
@@ -935,7 +889,22 @@ export type Deck = Tables<'decks'>
 export type Flashcard = Tables<'flashcards'>
 
 // ============================================
-// 擴展類型
+// 常用型別別名（新增）
+// ============================================
+export type JournalLife = Tables<'journals_life'>
+export type JournalLearning = Tables<'journals_learning'>
+export type JournalReading = Tables<'journals_reading'>
+export type JournalGratitude = Tables<'journals_gratitude'>
+export type Habit = Tables<'habits'>
+export type HabitLog = Tables<'habit_logs'>
+export type Task = Tables<'tasks'>
+export type ScheduleSlot = Tables<'schedule_slots'>
+export type HealthExercise = Tables<'health_exercises'>
+export type HealthMetric = Tables<'health_metrics'>
+export type FinanceRecord = Tables<'finance_records'>
+
+// ============================================
+// 擴展類型（新增）
 // ============================================
 
 // 習慣含今日打卡狀態
@@ -945,12 +914,11 @@ export type HabitWithTodayLog = Habit & {
 
 // 任務四象限類型
 export type TaskQuadrant = 
-  | 'do_first'      // 重要且緊急
-  | 'schedule'      // 重要不緊急
-  | 'delegate'      // 緊急不重要
-  | 'eliminate'     // 不重要不緊急
+  | 'do_first'
+  | 'schedule'
+  | 'delegate'
+  | 'eliminate'
 
-// 取得任務象限
 export function getTaskQuadrant(task: Task): TaskQuadrant {
   if (task.is_important && task.is_urgent) return 'do_first'
   if (task.is_important && !task.is_urgent) return 'schedule'
@@ -978,7 +946,6 @@ export const SCHEDULE_SLOTS: SlotTime[] = [
   { slot: 10, startTime: '17:00', endTime: '17:50' },
 ]
 
-// 星期對照
 export const DAY_OF_WEEK_LABELS: Record<number, string> = {
   1: '週一',
   2: '週二',
@@ -989,7 +956,6 @@ export const DAY_OF_WEEK_LABELS: Record<number, string> = {
   7: '週日',
 }
 
-// 心情對照
 export const MOOD_LABELS: Record<number, string> = {
   1: '😢 很差',
   2: '😕 不好',
@@ -998,7 +964,6 @@ export const MOOD_LABELS: Record<number, string> = {
   5: '😄 很棒',
 }
 
-// 健康數值類型對照
 export const METRIC_TYPE_LABELS: Record<string, string> = {
   weight: '體重 (kg)',
   blood_pressure: '血壓 (mmHg)',
@@ -1006,7 +971,6 @@ export const METRIC_TYPE_LABELS: Record<string, string> = {
   water: '飲水 (ml)',
 }
 
-// 收支分類建議
 export const EXPENSE_CATEGORIES = [
   '飲食',
   '交通',
