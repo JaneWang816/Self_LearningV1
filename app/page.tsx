@@ -11,10 +11,10 @@ export default function Home() {
                     {/* 主標題區 */}
                     <div className="space-y-4">
                         <h1 className="text-5xl md:text-6xl font-bold text-gray-800">
-                            歡迎使用自主學習平台
+                            歡迎使用自我管理平台
                         </h1>
                         <p className="text-xl text-gray-600">
-                            打造屬於你的個人化學習系統，輕鬆管理科目、筆記與練習題
+                            打造屬於你的個人化學習系統，日誌與生活管理
                         </p>
                     </div>
 
@@ -46,7 +46,7 @@ export default function Home() {
                                 size="lg"
                                 className="w-full h-16 text-xl font-bold bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all"
                             >
-                                開始學習
+                                開始使用
                             </Button>
                         </Link>
 

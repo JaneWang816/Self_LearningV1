@@ -1,73 +1,172 @@
 // components/layout/bottom-nav.tsx
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { supabase } from "@/lib/supabaseClient"
 import { cn } from "@/lib/utils"
+import type { ModuleType } from "@/types/supabase"
 import {
-  BookOpen,
-  FileQuestion,
-  XCircle,
-  Lightbulb,
   LayoutDashboard,
+  BookOpen,
+  CheckSquare,
+  ListTodo,
+  Calendar,
+  GraduationCap,
+  MoreHorizontal,
+  Dumbbell,
+  Wallet,
+  Settings,
 } from "lucide-react"
 
-const navItems = [
-  {
-    title: "總覽",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "科目",
-    href: "/dashboard/subjects",
-    icon: BookOpen,
-  },
-  {
-    title: "題庫",
-    href: "/dashboard/practice",
-    icon: FileQuestion,
-  },
-  {
-    title: "錯題",
-    href: "/dashboard/mistakes",
-    icon: XCircle,
-  },
-  {
-    title: "卡片",
-    href: "/dashboard/flashcards",
-    icon: Lightbulb,
-  },
+interface NavItem {
+  title: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  module?: ModuleType
+  priority: number // 數字越小優先級越高
+}
+
+const allNavItems: NavItem[] = [
+  { title: "總覽", href: "/", icon: LayoutDashboard, priority: 0 },
+  { title: "日誌", href: "/journal", icon: BookOpen, module: "journal", priority: 1 },
+  { title: "習慣", href: "/habits", icon: CheckSquare, module: "habits", priority: 2 },
+  { title: "任務", href: "/tasks", icon: ListTodo, module: "tasks", priority: 3 },
+  { title: "課表", href: "/schedule", icon: Calendar, module: "schedule", priority: 4 },
+  { title: "學習", href: "/dashboard", icon: GraduationCap, module: "study", priority: 5 },
+  { title: "健康", href: "/health", icon: Dumbbell, module: "health", priority: 6 },
+  { title: "收支", href: "/finance", icon: Wallet, module: "finance", priority: 7 },
+  { title: "設定", href: "/settings", icon: Settings, priority: 8 },
 ]
+
+const MAX_VISIBLE_ITEMS = 5
 
 export function BottomNav() {
   const pathname = usePathname()
+  const [enabledModules, setEnabledModules] = useState<ModuleType[]>([])
+  const [showMore, setShowMore] = useState(false)
+
+  // 載入用戶啟用的模組
+  useEffect(() => {
+    const loadEnabledModules = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("enabled_modules")
+        .eq("id", user.id)
+        .single()
+
+      if (profile?.enabled_modules) {
+        setEnabledModules(profile.enabled_modules as ModuleType[])
+      }
+    }
+
+    loadEnabledModules()
+  }, [])
+
+  // 過濾並排序導航項目
+  const filteredItems = allNavItems
+    .filter((item) => {
+      if (!item.module) return true
+      return enabledModules.includes(item.module)
+    })
+    .sort((a, b) => a.priority - b.priority)
+
+  // 分割為可見項目和更多選單項目
+  const needsMoreMenu = filteredItems.length > MAX_VISIBLE_ITEMS
+  const visibleItems = needsMoreMenu
+    ? filteredItems.slice(0, MAX_VISIBLE_ITEMS - 1)
+    : filteredItems
+  const moreItems = needsMoreMenu
+    ? filteredItems.slice(MAX_VISIBLE_ITEMS - 1)
+    : []
+
+  // 判斷是否為當前路徑
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/"
+    return pathname === href || pathname.startsWith(href + "/")
+  }
+
+  // 判斷更多選單中是否有當前項目
+  const isMoreActive = moreItems.some((item) => isActive(item.href))
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-50">
-      <div className="flex items-center justify-around h-16">
-        {navItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href))
+    <>
+      {/* 更多選單彈出層 */}
+      {showMore && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/20 z-40"
+            onClick={() => setShowMore(false)}
+          />
+          <div className="fixed bottom-16 left-0 right-0 bg-white border-t rounded-t-xl shadow-lg z-50 p-4">
+            <div className="grid grid-cols-4 gap-4">
+              {moreItems.map((item) => {
+                const active = isActive(item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setShowMore(false)}
+                    className={cn(
+                      "flex flex-col items-center justify-center p-3 rounded-lg transition-colors",
+                      active
+                        ? "bg-blue-50 text-blue-600"
+                        : "text-gray-500 hover:bg-gray-100"
+                    )}
+                  >
+                    <item.icon className="w-6 h-6" />
+                    <span className="mt-1 text-xs">{item.title}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      )}
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
+      {/* 底部導航列 */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-50">
+        <div className="flex items-center justify-around h-16">
+          {visibleItems.map((item) => {
+            const active = isActive(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex flex-col items-center justify-center flex-1 h-full transition-colors",
+                  active
+                    ? "text-blue-600"
+                    : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="mt-1 text-xs">{item.title}</span>
+              </Link>
+            )
+          })}
+
+          {/* 更多按鈕 */}
+          {needsMoreMenu && (
+            <button
+              onClick={() => setShowMore(!showMore)}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full transition-colors",
-                isActive
+                isMoreActive || showMore
                   ? "text-blue-600"
                   : "text-gray-500 hover:text-gray-700"
               )}
             >
-              <item.icon className="w-5 h-5" />
-              <span className="mt-1 text-xs">{item.title}</span>
-            </Link>
-          )
-        })}
-      </div>
-    </nav>
+              <MoreHorizontal className="w-5 h-5" />
+              <span className="mt-1 text-xs">更多</span>
+            </button>
+          )}
+        </div>
+      </nav>
+    </>
   )
 }

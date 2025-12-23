@@ -16,10 +16,18 @@ import {
   RotateCcw,
   FileText,
   Shuffle,
+  Volume2,
+  VolumeX,
 } from "lucide-react"
+import { speakWithLang, stopSpeaking, type LanguageCode } from "@/lib/speech"
 import type { Deck, Flashcard } from "@/types/supabase"
 
 type TestMode = "fill_front" | "choose_back" | "choose_front"
+
+interface DeckWithLang extends Deck {
+  front_lang?: string
+  back_lang?: string
+}
 
 interface TestQuestion {
   card: Flashcard
@@ -32,7 +40,7 @@ export default function FlashcardTestPage() {
   const router = useRouter()
   const deckId = params.deckId as string
 
-  const [deck, setDeck] = useState<Deck | null>(null)
+  const [deck, setDeck] = useState<DeckWithLang | null>(null)
   const [cards, setCards] = useState<Flashcard[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -48,6 +56,13 @@ export default function FlashcardTestPage() {
 
   // 統計
   const [stats, setStats] = useState({ correct: 0, wrong: 0 })
+
+  // 離開頁面時停止語音
+  useEffect(() => {
+    return () => {
+      stopSpeaking()
+    }
+  }, [])
 
   // 載入資料
   useEffect(() => {
@@ -398,13 +413,28 @@ export default function FlashcardTestPage() {
 
       {/* 題目 */}
       <Card>
-        <CardContent className="p-8">
+        <CardContent className="p-8 relative">
           <p className="text-xs text-gray-400 mb-2 text-center">
             {testMode === "choose_front" ? "背面" : "正面"}
           </p>
           <p className="text-xl text-center text-gray-800 whitespace-pre-wrap">
             {testMode === "choose_front" ? question.card.back : question.card.front}
           </p>
+          {/* 語音按鈕 */}
+          <button
+            onClick={() => {
+              const isBack = testMode === "choose_front"
+              const text = isBack ? question.card.back : question.card.front
+              const lang = isBack 
+                ? (deck?.back_lang as LanguageCode) || "auto"
+                : (deck?.front_lang as LanguageCode) || "auto"
+              speakWithLang(text, lang)
+            }}
+            className="absolute bottom-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+            title="朗讀"
+          >
+            <Volume2 className="w-5 h-5 text-gray-400 hover:text-blue-600" />
+          </button>
         </CardContent>
       </Card>
 

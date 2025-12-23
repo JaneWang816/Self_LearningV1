@@ -12,16 +12,24 @@ import {
   RotateCcw,
   CheckCircle,
   Layers,
+  Volume2,
+  VolumeX,
 } from "lucide-react"
 import { calculateSM2, getNextReviewText } from "@/lib/sm2"
+import { speakWithLang, stopSpeaking, type LanguageCode } from "@/lib/speech"
 import type { Deck, Flashcard } from "@/types/supabase"
+
+interface DeckWithLang extends Deck {
+  front_lang?: string
+  back_lang?: string
+}
 
 export default function ReviewPage() {
   const params = useParams()
   const router = useRouter()
   const deckId = params.deckId as string
 
-  const [deck, setDeck] = useState<Deck | null>(null)
+  const [deck, setDeck] = useState<DeckWithLang | null>(null)
   const [cards, setCards] = useState<Flashcard[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -36,6 +44,10 @@ export default function ReviewPage() {
     reviewed: 0,
     correct: 0, // 評分 >= 3
   })
+
+  // 語音設定
+  const [autoSpeak, setAutoSpeak] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
 
   // 載入資料
   const fetchData = async () => {
@@ -106,7 +118,50 @@ export default function ReviewPage() {
   // 翻轉卡片
   const flipCard = () => {
     setFlipped(!flipped)
+    // 自動朗讀背面
+    if (!flipped && autoSpeak) {
+      const currentCard = cards[currentIndex]
+      if (currentCard) {
+        setTimeout(() => handleSpeak(currentCard.back, "back"), 300)
+      }
+    }
   }
+
+  // 朗讀文字
+  const handleSpeak = async (text: string, side: "front" | "back") => {
+    try {
+      setIsSpeaking(true)
+      const lang = side === "front" 
+        ? (deck?.front_lang as LanguageCode) || "auto"
+        : (deck?.back_lang as LanguageCode) || "auto"
+      await speakWithLang(text, lang)
+    } catch (error) {
+      console.error("語音播放失敗:", error)
+    } finally {
+      setIsSpeaking(false)
+    }
+  }
+
+  // 自動朗讀正面
+  useEffect(() => {
+    if (autoSpeak && cards.length > 0 && !flipped) {
+      const currentCard = cards[currentIndex]
+      if (currentCard) {
+        handleSpeak(currentCard.front, "front")
+      }
+    }
+    // 清理：離開時停止朗讀
+    return () => {
+      stopSpeaking()
+    }
+  }, [currentIndex, autoSpeak])
+
+  // 離開頁面時停止朗讀
+  useEffect(() => {
+    return () => {
+      stopSpeaking()
+    }
+  }, [])
 
   // 評分並進入下一張
   const handleRate = async (quality: number) => {
@@ -292,6 +347,21 @@ export default function ReviewPage() {
         />
       </div>
 
+      {/* 語音控制 */}
+      <div className="flex justify-center">
+        <button
+          onClick={() => setAutoSpeak(!autoSpeak)}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-colors ${
+            autoSpeak
+              ? "bg-blue-100 text-blue-700"
+              : "bg-gray-100 text-gray-600"
+          }`}
+        >
+          {autoSpeak ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          自動朗讀 {autoSpeak ? "開" : "關"}
+        </button>
+      </div>
+
       {/* 卡片區域 */}
       <div
         className="perspective-1000 cursor-pointer"
@@ -311,11 +381,22 @@ export default function ReviewPage() {
             className={`min-h-[300px] ${flipped ? "invisible" : ""}`}
             style={{ backfaceVisibility: "hidden" }}
           >
-            <CardContent className="flex flex-col items-center justify-center min-h-[300px] p-8">
+            <CardContent className="flex flex-col items-center justify-center min-h-[300px] p-8 relative">
               <p className="text-xs text-gray-400 mb-4">正面 · 點擊翻轉</p>
               <p className="text-xl text-gray-800 text-center whitespace-pre-wrap">
                 {currentCard.front}
               </p>
+              {/* 語音按鈕 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleSpeak(currentCard.front, "front")
+                }}
+                className="absolute bottom-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                title="朗讀"
+              >
+                <Volume2 className={`w-5 h-5 ${isSpeaking ? "text-blue-600" : "text-gray-400"}`} />
+              </button>
             </CardContent>
           </Card>
 
@@ -327,11 +408,22 @@ export default function ReviewPage() {
               transform: "rotateY(180deg)",
             }}
           >
-            <CardContent className="flex flex-col items-center justify-center min-h-[300px] p-8">
+            <CardContent className="flex flex-col items-center justify-center min-h-[300px] p-8 relative">
               <p className="text-xs text-gray-400 mb-4">背面</p>
               <p className="text-xl text-gray-800 text-center whitespace-pre-wrap">
                 {currentCard.back}
               </p>
+              {/* 語音按鈕 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleSpeak(currentCard.back, "back")
+                }}
+                className="absolute bottom-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                title="朗讀"
+              >
+                <Volume2 className={`w-5 h-5 ${isSpeaking ? "text-blue-600" : "text-gray-400"}`} />
+              </button>
             </CardContent>
           </Card>
         </div>

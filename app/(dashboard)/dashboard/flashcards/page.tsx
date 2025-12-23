@@ -10,6 +10,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -37,7 +44,9 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
+  Volume2,
 } from "lucide-react"
+import { supportedLanguages, type LanguageCode } from "@/lib/speech"
 import type { Deck, Flashcard } from "@/types/supabase"
 
 interface DeckWithStats extends Deck {
@@ -55,6 +64,8 @@ export default function FlashcardsPage() {
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null)
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
+  const [frontLang, setFrontLang] = useState<LanguageCode>("auto")
+  const [backLang, setBackLang] = useState<LanguageCode>("auto")
   const [saving, setSaving] = useState(false)
 
   // 刪除狀態
@@ -123,6 +134,8 @@ export default function FlashcardsPage() {
     setEditingDeck(null)
     setTitle("")
     setDescription("")
+    setFrontLang("auto")
+    setBackLang("auto")
     setFormOpen(true)
   }
 
@@ -131,6 +144,8 @@ export default function FlashcardsPage() {
     setEditingDeck(deck)
     setTitle(deck.title)
     setDescription(deck.description || "")
+    setFrontLang(((deck as any).front_lang as LanguageCode) || "auto")
+    setBackLang(((deck as any).back_lang as LanguageCode) || "auto")
     setFormOpen(true)
   }
 
@@ -153,6 +168,8 @@ export default function FlashcardsPage() {
         .update({
           title: title.trim(),
           description: description.trim() || null,
+          front_lang: frontLang,
+          back_lang: backLang,
         })
         .eq("id", editingDeck.id)
     } else {
@@ -163,6 +180,8 @@ export default function FlashcardsPage() {
           user_id: user.id,
           title: title.trim(),
           description: description.trim() || null,
+          front_lang: frontLang,
+          back_lang: backLang,
         })
     }
 
@@ -311,7 +330,7 @@ export default function FlashcardsPage() {
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="例如：英文單字、歷史年代"
+                placeholder="例如：西班牙語單字、英文片語"
               />
             </div>
             <div className="space-y-2">
@@ -321,8 +340,51 @@ export default function FlashcardsPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="選填，簡短描述這個卡片組"
-                rows={3}
+                rows={2}
               />
+            </div>
+
+            {/* 語音語言設定 */}
+            <div className="pt-2 border-t">
+              <div className="flex items-center gap-2 mb-3">
+                <Volume2 className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">語音朗讀設定</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>正面語言</Label>
+                  <Select value={frontLang} onValueChange={(v) => setFrontLang(v as LanguageCode)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {supportedLanguages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>背面語言</Label>
+                  <Select value={backLang} onValueChange={(v) => setBackLang(v as LanguageCode)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {supportedLanguages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                選擇「自動偵測」會根據內容判斷，但英西相似單詞可能誤判
+              </p>
             </div>
           </div>
 

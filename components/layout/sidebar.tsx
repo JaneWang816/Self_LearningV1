@@ -1,79 +1,272 @@
 // components/layout/sidebar.tsx
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { supabase } from "@/lib/supabaseClient"
 import { cn } from "@/lib/utils"
+import type { ModuleType } from "@/types/supabase"
 import {
+  LayoutDashboard,
   BookOpen,
+  FileText,
+  BookMarked,
+  Heart,
+  CheckSquare,
+  ListTodo,
+  Calendar,
+  Dumbbell,
+  Wallet,
+  GraduationCap,
+  Settings,
+  ChevronDown,
   FileQuestion,
   XCircle,
   Lightbulb,
-  LayoutDashboard,
 } from "lucide-react"
 
-const navItems = [
+// 導航項目定義
+interface NavItem {
+  title: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  module?: ModuleType
+  children?: NavItem[]
+}
+
+const navItems: NavItem[] = [
   {
     title: "總覽",
-    href: "/dashboard",
+    href: "/",
     icon: LayoutDashboard,
   },
   {
-    title: "科目",
-    href: "/dashboard/subjects",
+    title: "日誌",
+    href: "/journal",
     icon: BookOpen,
+    module: "journal",
+    children: [
+      { title: "生活日誌", href: "/journal/life", icon: FileText },
+      { title: "學習日誌", href: "/journal/learning", icon: BookMarked },
+      { title: "閱讀日誌", href: "/journal/reading", icon: BookOpen },
+      { title: "感恩日誌", href: "/journal/gratitude", icon: Heart },
+    ],
   },
   {
-    title: "題庫",
-    href: "/dashboard/practice",
-    icon: FileQuestion,
+    title: "習慣打卡",
+    href: "/habits",
+    icon: CheckSquare,
+    module: "habits",
   },
   {
-    title: "錯題本",
-    href: "/dashboard/mistakes",
-    icon: XCircle,
+    title: "任務",
+    href: "/tasks",
+    icon: ListTodo,
+    module: "tasks",
   },
   {
-    title: "記憶卡片",
-    href: "/dashboard/flashcards",
-    icon: Lightbulb,
+    title: "課表",
+    href: "/schedule",
+    icon: Calendar,
+    module: "schedule",
+  },
+  {
+    title: "學習系統",
+    href: "/dashboard",
+    icon: GraduationCap,
+    module: "study",
+    children: [
+      { title: "科目管理", href: "/dashboard/subjects", icon: BookOpen },
+      { title: "題庫練習", href: "/dashboard/practice", icon: FileQuestion },
+      { title: "錯題本", href: "/dashboard/mistakes", icon: XCircle },
+      { title: "記憶卡片", href: "/dashboard/flashcards", icon: Lightbulb },
+    ],
+  },
+  {
+    title: "健康記錄",
+    href: "/health",
+    icon: Dumbbell,
+    module: "health",
+  },
+  {
+    title: "收支記錄",
+    href: "/finance",
+    icon: Wallet,
+    module: "finance",
+  },
+  {
+    title: "設定",
+    href: "/settings",
+    icon: Settings,
   },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+  const [enabledModules, setEnabledModules] = useState<ModuleType[]>([])
+  const [expandedItems, setExpandedItems] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // 載入用戶啟用的模組
+  useEffect(() => {
+    const loadEnabledModules = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("enabled_modules")
+        .eq("id", user.id)
+        .single()
+
+      if (profile?.enabled_modules) {
+        setEnabledModules(profile.enabled_modules as ModuleType[])
+      }
+      setLoading(false)
+    }
+
+    loadEnabledModules()
+  }, [])
+
+  // 根據當前路徑自動展開對應的父項目
+  useEffect(() => {
+    navItems.forEach((item) => {
+      if (item.children) {
+        const isChildActive = item.children.some((child) =>
+          pathname.startsWith(child.href)
+        )
+        if (isChildActive && !expandedItems.includes(item.href)) {
+          setExpandedItems((prev) => [...prev, item.href])
+        }
+      }
+    })
+  }, [pathname])
+
+  // 切換展開狀態
+  const toggleExpand = (href: string) => {
+    setExpandedItems((prev) =>
+      prev.includes(href)
+        ? prev.filter((item) => item !== href)
+        : [...prev, href]
+    )
+  }
+
+  // 過濾出用戶啟用的模組
+  const filteredNavItems = navItems.filter((item) => {
+    if (!item.module) return true
+    return enabledModules.includes(item.module)
+  })
+
+  // 判斷是否為當前路徑
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/"
+    return pathname === href || pathname.startsWith(href + "/")
+  }
 
   return (
     <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-white border-r">
       {/* Logo */}
       <div className="flex items-center h-16 px-6 border-b">
         <BookOpen className="w-8 h-8 text-blue-600" />
-        <span className="ml-3 text-xl font-bold text-gray-800">自主學習</span>
+        <span className="ml-3 text-xl font-bold text-gray-800">學習平台</span>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href))
+      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          filteredNavItems.map((item) => {
+            const active = isActive(item.href)
+            const expanded = expandedItems.includes(item.href)
+            const hasChildren = item.children && item.children.length > 0
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors",
-                isActive
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-              )}
-            >
-              <item.icon className={cn("w-5 h-5 mr-3", isActive ? "text-blue-700" : "text-gray-400")} />
-              {item.title}
-            </Link>
-          )
-        })}
+            return (
+              <div key={item.href}>
+                {hasChildren ? (
+                  <button
+                    onClick={() => toggleExpand(item.href)}
+                    className={cn(
+                      "flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                      active
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    )}
+                  >
+                    <div className="flex items-center">
+                      <item.icon
+                        className={cn(
+                          "w-5 h-5 mr-3",
+                          active ? "text-blue-700" : "text-gray-400"
+                        )}
+                      />
+                      {item.title}
+                    </div>
+                    <ChevronDown
+                      className={cn(
+                        "w-4 h-4 transition-transform",
+                        expanded ? "rotate-180" : ""
+                      )}
+                    />
+                  </button>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                      active
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    )}
+                  >
+                    <item.icon
+                      className={cn(
+                        "w-5 h-5 mr-3",
+                        active ? "text-blue-700" : "text-gray-400"
+                      )}
+                    />
+                    {item.title}
+                  </Link>
+                )}
+
+                {/* 子選單 */}
+                {hasChildren && expanded && (
+                  <div className="mt-1 ml-4 space-y-1">
+                    {item.children!.map((child) => {
+                      const childActive = isActive(child.href)
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={cn(
+                            "flex items-center px-4 py-2 text-sm rounded-lg transition-colors",
+                            childActive
+                              ? "bg-blue-50 text-blue-700 font-medium"
+                              : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                          )}
+                        >
+                          <child.icon
+                            className={cn(
+                              "w-4 h-4 mr-3",
+                              childActive ? "text-blue-700" : "text-gray-400"
+                            )}
+                          />
+                          {child.title}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })
+        )}
       </nav>
     </aside>
   )
