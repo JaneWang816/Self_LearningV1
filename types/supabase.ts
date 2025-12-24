@@ -1,5 +1,5 @@
 // types/supabase.ts
-// 對應 schema_v3.sql 的 TypeScript 類型定義（基於原有檔案最小修改）
+// 由 Supabase CLI 自動生成，並加入自訂輔助類型
 
 export type Json =
   | string
@@ -9,842 +9,936 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-// ============================================
-// 新增：模組類型
-// ============================================
-export type ModuleType = 
-  | 'journal' 
-  | 'habits' 
-  | 'tasks' 
-  | 'schedule' 
-  | 'health' 
-  | 'finance' 
-  | 'study'
-
-export interface Database {
+export type Database = {
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
   public: {
     Tables: {
-      profiles: {
+      decks: {
         Row: {
-          id: string
-          nickname: string | null
-          avatar_url: string | null
-          enabled_modules: ModuleType[] | null  // 新增
+          back_lang: string | null
           created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id: string
-          nickname?: string | null
-          avatar_url?: string | null
-          enabled_modules?: ModuleType[] | null  // 新增
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          nickname?: string | null
-          avatar_url?: string | null
-          enabled_modules?: ModuleType[] | null  // 新增
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_id_fkey"
-            columns: ["id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      subjects: {
-        Row: {
-          id: string
-          user_id: string
-          title: string
           description: string | null
-          cover_url: string | null
-          created_at: string | null
+          front_lang: string | null
+          id: string
+          title: string
           updated_at: string | null
+          user_id: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          title: string
-          description?: string | null
-          cover_url?: string | null
+          back_lang?: string | null
           created_at?: string | null
+          description?: string | null
+          front_lang?: string | null
+          id?: string
+          title: string
           updated_at?: string | null
+          user_id: string
         }
         Update: {
-          id?: string
-          user_id?: string
-          title?: string
-          description?: string | null
-          cover_url?: string | null
+          back_lang?: string | null
           created_at?: string | null
+          description?: string | null
+          front_lang?: string | null
+          id?: string
+          title?: string
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "subjects_user_id_fkey"
+            foreignKeyName: "decks_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
-      topics: {
+      finance_records: {
         Row: {
-          id: string
-          subject_id: string
-          user_id: string
-          title: string
-          order: number | null
+          amount: number
+          category: string
           created_at: string | null
+          date: string
+          description: string | null
+          id: string
+          type: string
           updated_at: string | null
+          user_id: string
         }
         Insert: {
-          id?: string
-          subject_id: string
-          user_id: string
-          title: string
-          order?: number | null
+          amount: number
+          category: string
           created_at?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          type: string
           updated_at?: string | null
+          user_id: string
         }
         Update: {
-          id?: string
-          subject_id?: string
-          user_id?: string
-          title?: string
-          order?: number | null
+          amount?: number
+          category?: string
           created_at?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          type?: string
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "topics_subject_id_fkey"
+            foreignKeyName: "finance_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcards: {
+        Row: {
+          back: string
+          created_at: string | null
+          deck_id: string | null
+          ease_factor: number | null
+          front: string
+          id: string
+          interval: number | null
+          next_review_at: string | null
+          repetition_count: number | null
+          unit_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          back: string
+          created_at?: string | null
+          deck_id?: string | null
+          ease_factor?: number | null
+          front: string
+          id?: string
+          interval?: number | null
+          next_review_at?: string | null
+          repetition_count?: number | null
+          unit_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          back?: string
+          created_at?: string | null
+          deck_id?: string | null
+          ease_factor?: number | null
+          front?: string
+          id?: string
+          interval?: number | null
+          next_review_at?: string | null
+          repetition_count?: number | null
+          unit_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcards_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "decks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flashcards_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flashcards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habit_logs: {
+        Row: {
+          completed: boolean | null
+          created_at: string | null
+          date: string
+          habit_id: string
+          id: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string | null
+          date?: string
+          habit_id: string
+          id?: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string | null
+          date?: string
+          habit_id?: string
+          id?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_logs_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "habit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          frequency: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          target_days: number[] | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          frequency?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          target_days?: number[] | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          frequency?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          target_days?: number[] | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      health_exercises: {
+        Row: {
+          calories: number | null
+          created_at: string | null
+          date: string
+          distance_km: number | null
+          duration_minutes: number | null
+          exercise_type: string
+          id: string
+          note: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          calories?: number | null
+          created_at?: string | null
+          date?: string
+          distance_km?: number | null
+          duration_minutes?: number | null
+          exercise_type: string
+          id?: string
+          note?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          calories?: number | null
+          created_at?: string | null
+          date?: string
+          distance_km?: number | null
+          duration_minutes?: number | null
+          exercise_type?: string
+          id?: string
+          note?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_exercises_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      health_metrics: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          metric_type: string
+          note: string | null
+          updated_at: string | null
+          user_id: string
+          value_primary: number
+          value_secondary: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          metric_type: string
+          note?: string | null
+          updated_at?: string | null
+          user_id: string
+          value_primary: number
+          value_secondary?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          metric_type?: string
+          note?: string | null
+          updated_at?: string | null
+          user_id?: string
+          value_primary?: number
+          value_secondary?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_metrics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journals_gratitude: {
+        Row: {
+          content: string
+          created_at: string | null
+          date: string
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journals_gratitude_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journals_learning: {
+        Row: {
+          content: string
+          created_at: string | null
+          date: string
+          difficulty: number | null
+          duration_minutes: number | null
+          id: string
+          subject_id: string | null
+          title: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          date?: string
+          difficulty?: number | null
+          duration_minutes?: number | null
+          id?: string
+          subject_id?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          date?: string
+          difficulty?: number | null
+          duration_minutes?: number | null
+          id?: string
+          subject_id?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journals_learning_subject_id_fkey"
             columns: ["subject_id"]
+            isOneToOne: false
             referencedRelation: "subjects"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "topics_user_id_fkey"
+            foreignKeyName: "journals_learning_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
-      units: {
+      journals_life: {
         Row: {
-          id: string
-          topic_id: string
-          user_id: string
-          title: string
-          content: string | null
-          mindmap_url: string | null
-          order: number | null
+          content: string
           created_at: string | null
+          date: string
+          id: string
+          mood: number | null
+          title: string | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
-          id?: string
-          topic_id: string
-          user_id: string
-          title: string
-          content?: string | null
-          mindmap_url?: string | null
-          order?: number | null
+          content: string
           created_at?: string | null
+          date?: string
+          id?: string
+          mood?: number | null
+          title?: string | null
           updated_at?: string | null
+          user_id: string
         }
         Update: {
-          id?: string
-          topic_id?: string
-          user_id?: string
-          title?: string
-          content?: string | null
-          mindmap_url?: string | null
-          order?: number | null
+          content?: string
           created_at?: string | null
+          date?: string
+          id?: string
+          mood?: number | null
+          title?: string | null
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "units_topic_id_fkey"
-            columns: ["topic_id"]
-            referencedRelation: "topics"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "units_user_id_fkey"
+            foreignKeyName: "journals_life_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
-      question_types: {
+      journals_reading: {
         Row: {
-          id: string
-          name: string
-          label: string
+          author: string | null
+          book_title: string
+          content: string | null
           created_at: string | null
+          current_page: number | null
+          date: string
+          id: string
+          is_finished: boolean | null
+          pages_read: number | null
+          rating: number | null
+          total_pages: number | null
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
-          id?: string
-          name: string
-          label: string
+          author?: string | null
+          book_title: string
+          content?: string | null
           created_at?: string | null
+          current_page?: number | null
+          date?: string
+          id?: string
+          is_finished?: boolean | null
+          pages_read?: number | null
+          rating?: number | null
+          total_pages?: number | null
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
-          id?: string
-          name?: string
-          label?: string
+          author?: string | null
+          book_title?: string
+          content?: string | null
           created_at?: string | null
+          current_page?: number | null
+          date?: string
+          id?: string
+          is_finished?: boolean | null
+          pages_read?: number | null
+          rating?: number | null
+          total_pages?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journals_reading_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          enabled_modules: string[] | null
+          id: string
+          nickname: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          enabled_modules?: string[] | null
+          id: string
+          nickname?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          enabled_modules?: string[] | null
+          id?: string
+          nickname?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
-      questions: {
-        Row: {
-          id: string
-          user_id: string
-          subject_id: string
-          question_type_id: string
-          content: string
-          options: Json | null
-          answer: Json | null
-          explanation: string | null
-          image_url: string | null
-          is_group: boolean | null
-          parent_id: string | null
-          attempt_count: number
-          wrong_count: number
-          consecutive_correct: number
-          last_attempted_at: string | null
-          marked_for_review: boolean
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          subject_id: string
-          question_type_id: string
-          content: string
-          options?: Json | null
-          answer?: Json | null
-          explanation?: string | null
-          image_url?: string | null
-          is_group?: boolean | null
-          parent_id?: string | null
-          attempt_count?: number
-          wrong_count?: number
-          consecutive_correct?: number
-          last_attempted_at?: string | null
-          marked_for_review?: boolean
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          subject_id?: string
-          question_type_id?: string
-          content?: string
-          options?: Json | null
-          answer?: Json | null
-          explanation?: string | null
-          image_url?: string | null
-          is_group?: boolean | null
-          parent_id?: string | null
-          attempt_count?: number
-          wrong_count?: number
-          consecutive_correct?: number
-          last_attempted_at?: string | null
-          marked_for_review?: boolean
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "questions_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "questions_subject_id_fkey"
-            columns: ["subject_id"]
-            referencedRelation: "subjects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "questions_question_type_id_fkey"
-            columns: ["question_type_id"]
-            referencedRelation: "question_types"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "questions_parent_id_fkey"
-            columns: ["parent_id"]
-            referencedRelation: "questions"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       question_topics: {
         Row: {
+          created_at: string | null
           question_id: string
           topic_id: string
-          created_at: string | null
         }
         Insert: {
+          created_at?: string | null
           question_id: string
           topic_id: string
-          created_at?: string | null
         }
         Update: {
+          created_at?: string | null
           question_id?: string
           topic_id?: string
-          created_at?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "question_topics_question_id_fkey"
             columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "question_topics_topic_id_fkey"
             columns: ["topic_id"]
+            isOneToOne: false
             referencedRelation: "topics"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
-      decks: {
+      question_types: {
         Row: {
-          id: string
-          user_id: string
-          title: string
-          description: string | null
           created_at: string | null
-          updated_at: string | null
+          id: string
+          label: string
+          name: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          title: string
-          description?: string | null
           created_at?: string | null
-          updated_at?: string | null
+          id?: string
+          label: string
+          name: string
         }
         Update: {
-          id?: string
-          user_id?: string
-          title?: string
-          description?: string | null
           created_at?: string | null
+          id?: string
+          label?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          answer: Json | null
+          attempt_count: number | null
+          consecutive_correct: number | null
+          content: string
+          created_at: string | null
+          explanation: string | null
+          id: string
+          image_url: string | null
+          is_group: boolean | null
+          last_attempted_at: string | null
+          marked_for_review: boolean | null
+          options: Json | null
+          parent_id: string | null
+          question_type_id: string
+          subject_id: string
+          updated_at: string | null
+          user_id: string
+          wrong_count: number | null
+        }
+        Insert: {
+          answer?: Json | null
+          attempt_count?: number | null
+          consecutive_correct?: number | null
+          content: string
+          created_at?: string | null
+          explanation?: string | null
+          id?: string
+          image_url?: string | null
+          is_group?: boolean | null
+          last_attempted_at?: string | null
+          marked_for_review?: boolean | null
+          options?: Json | null
+          parent_id?: string | null
+          question_type_id: string
+          subject_id: string
           updated_at?: string | null
+          user_id: string
+          wrong_count?: number | null
+        }
+        Update: {
+          answer?: Json | null
+          attempt_count?: number | null
+          consecutive_correct?: number | null
+          content?: string
+          created_at?: string | null
+          explanation?: string | null
+          id?: string
+          image_url?: string | null
+          is_group?: boolean | null
+          last_attempted_at?: string | null
+          marked_for_review?: boolean | null
+          options?: Json | null
+          parent_id?: string | null
+          question_type_id?: string
+          subject_id?: string
+          updated_at?: string | null
+          user_id?: string
+          wrong_count?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "decks_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      flashcards: {
-        Row: {
-          id: string
-          user_id: string
-          unit_id: string | null
-          deck_id: string | null
-          front: string
-          back: string
-          next_review_at: string | null
-          interval: number | null
-          ease_factor: number | null
-          repetition_count: number | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          unit_id?: string | null
-          deck_id?: string | null
-          front: string
-          back: string
-          next_review_at?: string | null
-          interval?: number | null
-          ease_factor?: number | null
-          repetition_count?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          unit_id?: string | null
-          deck_id?: string | null
-          front?: string
-          back?: string
-          next_review_at?: string | null
-          interval?: number | null
-          ease_factor?: number | null
-          repetition_count?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "flashcards_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "profiles"
+            foreignKeyName: "questions_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "flashcards_unit_id_fkey"
-            columns: ["unit_id"]
-            referencedRelation: "units"
+            foreignKeyName: "questions_question_type_id_fkey"
+            columns: ["question_type_id"]
+            isOneToOne: false
+            referencedRelation: "question_types"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "flashcards_deck_id_fkey"
-            columns: ["deck_id"]
-            referencedRelation: "decks"
+            foreignKeyName: "questions_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
             referencedColumns: ["id"]
-          }
+          },
+          {
+            foreignKeyName: "questions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
-
-      // ============================================
-      // 新增：日誌模組
-      // ============================================
-      journals_life: {
-        Row: {
-          id: string
-          user_id: string
-          title: string | null
-          content: string
-          mood: number | null
-          date: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          title?: string | null
-          content: string
-          mood?: number | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          title?: string | null
-          content?: string
-          mood?: number | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-      journals_learning: {
-        Row: {
-          id: string
-          user_id: string
-          subject_id: string | null
-          title: string | null
-          content: string
-          duration_minutes: number | null
-          difficulty: number | null
-          date: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          subject_id?: string | null
-          title?: string | null
-          content: string
-          duration_minutes?: number | null
-          difficulty?: number | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          subject_id?: string | null
-          title?: string | null
-          content?: string
-          duration_minutes?: number | null
-          difficulty?: number | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-      journals_reading: {
-        Row: {
-          id: string
-          user_id: string
-          book_title: string
-          author: string | null
-          content: string | null
-          pages_read: number | null
-          current_page: number | null
-          total_pages: number | null
-          rating: number | null
-          is_finished: boolean
-          date: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          book_title: string
-          author?: string | null
-          content?: string | null
-          pages_read?: number | null
-          current_page?: number | null
-          total_pages?: number | null
-          rating?: number | null
-          is_finished?: boolean
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          book_title?: string
-          author?: string | null
-          content?: string | null
-          pages_read?: number | null
-          current_page?: number | null
-          total_pages?: number | null
-          rating?: number | null
-          is_finished?: boolean
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-      journals_gratitude: {
-        Row: {
-          id: string
-          user_id: string
-          content: string
-          date: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          content: string
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          content?: string
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-
-      // ============================================
-      // 新增：習慣模組
-      // ============================================
-      habits: {
-        Row: {
-          id: string
-          user_id: string
-          title: string
-          description: string | null
-          icon: string | null
-          color: string | null
-          frequency: string
-          target_days: number[]
-          is_active: boolean
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          title: string
-          description?: string | null
-          icon?: string | null
-          color?: string | null
-          frequency?: string
-          target_days?: number[]
-          is_active?: boolean
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          title?: string
-          description?: string | null
-          icon?: string | null
-          color?: string | null
-          frequency?: string
-          target_days?: number[]
-          is_active?: boolean
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-      habit_logs: {
-        Row: {
-          id: string
-          habit_id: string
-          user_id: string
-          date: string
-          completed: boolean
-          note: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          habit_id: string
-          user_id: string
-          date?: string
-          completed?: boolean
-          note?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          habit_id?: string
-          user_id?: string
-          date?: string
-          completed?: boolean
-          note?: string | null
-          created_at?: string | null
-        }
-      }
-
-      // ============================================
-      // 新增：任務模組
-      // ============================================
-      tasks: {
-        Row: {
-          id: string
-          user_id: string
-          title: string
-          description: string | null
-          is_important: boolean
-          is_urgent: boolean
-          due_date: string | null
-          completed_at: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          title: string
-          description?: string | null
-          is_important?: boolean
-          is_urgent?: boolean
-          due_date?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          title?: string
-          description?: string | null
-          is_important?: boolean
-          is_urgent?: boolean
-          due_date?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-
-      // ============================================
-      // 新增：課表模組
-      // ============================================
       schedule_slots: {
         Row: {
-          id: string
-          user_id: string
+          created_at: string | null
           day_of_week: number
+          id: string
+          location: string | null
+          note: string | null
           slot_number: number
           subject_name: string
           teacher: string | null
-          location: string | null
-          note: string | null
-          created_at: string | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
-          id?: string
-          user_id: string
+          created_at?: string | null
           day_of_week: number
+          id?: string
+          location?: string | null
+          note?: string | null
           slot_number: number
           subject_name: string
           teacher?: string | null
-          location?: string | null
-          note?: string | null
-          created_at?: string | null
           updated_at?: string | null
+          user_id: string
         }
         Update: {
-          id?: string
-          user_id?: string
+          created_at?: string | null
           day_of_week?: number
+          id?: string
+          location?: string | null
+          note?: string | null
           slot_number?: number
           subject_name?: string
           teacher?: string | null
-          location?: string | null
-          note?: string | null
-          created_at?: string | null
           updated_at?: string | null
-        }
-      }
-
-      // ============================================
-      // 新增：健康模組
-      // ============================================
-      health_exercises: {
-        Row: {
-          id: string
-          user_id: string
-          exercise_type: string
-          duration_minutes: number | null
-          distance_km: number | null
-          calories: number | null
-          note: string | null
-          date: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          exercise_type: string
-          duration_minutes?: number | null
-          distance_km?: number | null
-          calories?: number | null
-          note?: string | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
           user_id?: string
-          exercise_type?: string
-          duration_minutes?: number | null
-          distance_km?: number | null
-          calories?: number | null
-          note?: string | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_slots_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      health_metrics: {
+      subjects: {
         Row: {
-          id: string
-          user_id: string
-          metric_type: string
-          value_primary: number
-          value_secondary: number | null
-          note: string | null
-          date: string
+          cover_url: string | null
           created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          metric_type: string
-          value_primary: number
-          value_secondary?: number | null
-          note?: string | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          metric_type?: string
-          value_primary?: number
-          value_secondary?: number | null
-          note?: string | null
-          date?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-
-      // ============================================
-      // 新增：收支模組
-      // ============================================
-      finance_records: {
-        Row: {
-          id: string
-          user_id: string
-          type: string
-          category: string
-          amount: number
           description: string | null
-          date: string
-          created_at: string | null
+          id: string
+          title: string
           updated_at: string | null
+          user_id: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          type: string
-          category: string
-          amount: number
-          description?: string | null
-          date?: string
+          cover_url?: string | null
           created_at?: string | null
+          description?: string | null
+          id?: string
+          title: string
           updated_at?: string | null
+          user_id: string
         }
         Update: {
-          id?: string
-          user_id?: string
-          type?: string
-          category?: string
-          amount?: number
-          description?: string | null
-          date?: string
+          cover_url?: string | null
           created_at?: string | null
+          description?: string | null
+          id?: string
+          title?: string
           updated_at?: string | null
+          user_id?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "subjects_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          is_important: boolean | null
+          is_urgent: boolean | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_important?: boolean | null
+          is_urgent?: boolean | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_important?: boolean | null
+          is_urgent?: boolean | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      topics: {
+        Row: {
+          created_at: string | null
+          id: string
+          order: number | null
+          subject_id: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order?: number | null
+          subject_id: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order?: number | null
+          subject_id?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topics_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "topics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      units: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          mindmap_url: string | null
+          order: number | null
+          title: string
+          topic_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          mindmap_url?: string | null
+          order?: number | null
+          title: string
+          topic_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          mindmap_url?: string | null
+          order?: number | null
+          title?: string
+          topic_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "units_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "units_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -862,21 +956,145 @@ export interface Database {
   }
 }
 
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
+
 // ============================================
-// 便利型別
+// 自訂類型（新增）
 // ============================================
 
-export type Tables<T extends keyof Database['public']['Tables']> = 
-  Database['public']['Tables'][T]['Row']
-
-export type InsertTables<T extends keyof Database['public']['Tables']> = 
-  Database['public']['Tables'][T]['Insert']
-
-export type UpdateTables<T extends keyof Database['public']['Tables']> = 
-  Database['public']['Tables'][T]['Update']
+// 模組類型
+export type ModuleType = 
+  | 'journal' 
+  | 'habits' 
+  | 'tasks' 
+  | 'schedule' 
+  | 'health' 
+  | 'finance' 
+  | 'study'
 
 // ============================================
-// 常用型別別名（原有）
+// 常用型別別名
 // ============================================
 export type Profile = Tables<'profiles'>
 export type Subject = Tables<'subjects'>
@@ -888,9 +1106,7 @@ export type QuestionTopic = Tables<'question_topics'>
 export type Deck = Tables<'decks'>
 export type Flashcard = Tables<'flashcards'>
 
-// ============================================
-// 常用型別別名（新增）
-// ============================================
+// 新模組
 export type JournalLife = Tables<'journals_life'>
 export type JournalLearning = Tables<'journals_learning'>
 export type JournalReading = Tables<'journals_reading'>
@@ -904,7 +1120,7 @@ export type HealthMetric = Tables<'health_metrics'>
 export type FinanceRecord = Tables<'finance_records'>
 
 // ============================================
-// 擴展類型（新增）
+// 擴展類型
 // ============================================
 
 // 習慣含今日打卡狀態

@@ -19,17 +19,12 @@ import { calculateSM2, getNextReviewText } from "@/lib/sm2"
 import { speakWithLang, stopSpeaking, type LanguageCode } from "@/lib/speech"
 import type { Deck, Flashcard } from "@/types/supabase"
 
-interface DeckWithLang extends Deck {
-  front_lang?: string
-  back_lang?: string
-}
-
 export default function ReviewPage() {
   const params = useParams()
   const router = useRouter()
   const deckId = params.deckId as string
 
-  const [deck, setDeck] = useState<DeckWithLang | null>(null)
+  const [deck, setDeck] = useState<Deck | null>(null)
   const [cards, setCards] = useState<Flashcard[]>([])
   const [loading, setLoading] = useState(true)
 
