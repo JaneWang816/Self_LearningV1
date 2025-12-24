@@ -195,11 +195,13 @@ export default function MistakesPage() {
     return subjects.find((s) => s.id === subjectId)
   }
 
-  // 計算正確率
+  // 計算正確率（加入 null 檢查）
   const getAccuracy = (question: Question) => {
-    if (question.attempt_count === 0) return 0
-    const correctCount = question.attempt_count - question.wrong_count
-    return Math.round((correctCount / question.attempt_count) * 100)
+    const attemptCount = question.attempt_count ?? 0
+    const wrongCount = question.wrong_count ?? 0
+    if (attemptCount === 0) return 0
+    const correctCount = attemptCount - wrongCount
+    return Math.round((correctCount / attemptCount) * 100)
   }
 
   if (loading) {
@@ -384,6 +386,10 @@ function MistakeCard({
     : "text-gray-600 bg-gray-100"
   const consecutiveCorrect = (question as any).consecutive_correct || 0
 
+  // 使用 nullish coalescing 處理可能為 null 的值
+  const attemptCount = question.attempt_count ?? 0
+  const wrongCount = question.wrong_count ?? 0
+
   // 進度條顏色
   const getProgressColor = () => {
     if (consecutiveCorrect >= 2) return "bg-green-500"
@@ -422,10 +428,10 @@ function MistakeCard({
             {/* 統計資訊 */}
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span>
-                作答 {question.attempt_count} 次
+                作答 {attemptCount} 次
               </span>
               <span>
-                答錯 {question.wrong_count} 次
+                答錯 {wrongCount} 次
               </span>
               <span>
                 正確率 {accuracy}%

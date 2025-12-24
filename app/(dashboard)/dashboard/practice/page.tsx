@@ -575,6 +575,10 @@ function QuestionCard({
   const hasImage = !!(question as any).image_url
   const consecutiveCorrect = (question as any).consecutive_correct || 0
 
+  // 使用 nullish coalescing 處理可能為 null 的值
+  const attemptCount = question.attempt_count ?? 0
+  const wrongCount = question.wrong_count ?? 0
+
   // 練習模式：點擊整張卡片進入練習
   const handleCardClick = () => {
     if (mode === "practice") {
@@ -638,10 +642,10 @@ function QuestionCard({
               )}
             </div>
             <p className="text-gray-800 line-clamp-2">{question.content}</p>
-            {question.attempt_count > 0 && (
+            {attemptCount > 0 && (
               <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-                <span>作答 {question.attempt_count} 次</span>
-                <span>答錯 {question.wrong_count} 次</span>
+                <span>作答 {attemptCount} 次</span>
+                <span>答錯 {wrongCount} 次</span>
                 <span>連續答對 {consecutiveCorrect} 次</span>
               </div>
             )}
