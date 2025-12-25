@@ -19,7 +19,7 @@ import {
   Volume2,
 } from "lucide-react"
 import { speakWithLang, stopSpeaking, type LanguageCode } from "@/lib/speech"
-import type { Deck, Flashcard } from "@/types/supabase"
+import type { Deck, Flashcard } from "@/types/database.types"
 
 type TestMode = "fill_front" | "choose_back" | "choose_front"
 

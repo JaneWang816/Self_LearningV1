@@ -29,7 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { ArrowLeft, Plus, FileImage, MoreVertical, Pencil, Trash2, Image, X } from "lucide-react"
-import type { Subject, Topic, Unit } from "@/types/supabase"
+import type { Subject, Topic, Unit } from "@/types/database.types"
 
 export default function TopicDetailPage() {
   const params = useParams()

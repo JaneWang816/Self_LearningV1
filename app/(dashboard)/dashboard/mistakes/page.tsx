@@ -25,7 +25,7 @@ import {
   Award,
   Target,
 } from "lucide-react"
-import type { Subject, Question, QuestionType } from "@/types/supabase"
+import type { Subject, Question, QuestionType } from "@/types/database.types"
 
 // 題型圖示對應
 const typeIcons: Record<string, React.ElementType> = {

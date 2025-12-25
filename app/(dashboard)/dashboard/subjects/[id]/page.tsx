@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { ArrowLeft, Plus, FolderOpen, MoreVertical, Pencil, Trash2 } from "lucide-react"
-import type { Subject, Topic } from "@/types/supabase"
+import type { Subject, Topic } from "@/types/database.types"
 
 export default function SubjectDetailPage() {
   const params = useParams()

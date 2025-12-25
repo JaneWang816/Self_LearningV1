@@ -6,7 +6,7 @@ import Link from "next/link"
 import { supabase } from "@/lib/supabaseClient"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import type { ModuleType } from "@/types/supabase"
+import type { ModuleType } from "@/types/custom"
 import {
   BookOpen,
   CheckSquare,
