@@ -108,6 +108,15 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
   type __Unused = __Check
 }
 
+// Validate ../../../app/(dashboard)/dashboard/habits/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/dashboard/habits">> = Specific
+  const handler = {} as typeof import("../../../app/(dashboard)/dashboard/habits/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../../app/(dashboard)/dashboard/mistakes/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/dashboard/mistakes">> = Specific
@@ -139,6 +148,15 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
 {
   type __IsExpected<Specific extends AppPageConfig<"/dashboard/practice">> = Specific
   const handler = {} as typeof import("../../../app/(dashboard)/dashboard/practice/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/(dashboard)/dashboard/schedule/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/dashboard/schedule">> = Specific
+  const handler = {} as typeof import("../../../app/(dashboard)/dashboard/schedule/page.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

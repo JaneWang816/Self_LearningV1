@@ -38,42 +38,42 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     title: "總覽",
-    href: "/",
+    href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
     title: "日誌",
-    href: "/journal",
+    href: "/dashboard/journal",
     icon: BookOpen,
     module: "journal",
     children: [
-      { title: "生活日誌", href: "/journal/life", icon: FileText },
-      { title: "學習日誌", href: "/journal/learning", icon: BookMarked },
-      { title: "閱讀日誌", href: "/journal/reading", icon: BookOpen },
-      { title: "感恩日誌", href: "/journal/gratitude", icon: Heart },
+      { title: "生活日誌", href: "/dashboard/journal/life", icon: FileText },
+      { title: "學習日誌", href: "/dashboard/journal/learning", icon: BookMarked },
+      { title: "閱讀日誌", href: "/dashboard/journal/reading", icon: BookOpen },
+      { title: "感恩日誌", href: "/dashboard/journal/gratitude", icon: Heart },
     ],
   },
   {
     title: "習慣打卡",
-    href: "/habits",
+    href: "/dashboard/habits",
     icon: CheckSquare,
     module: "habits",
   },
   {
     title: "任務",
-    href: "/tasks",
+    href: "/dashboard/tasks",
     icon: ListTodo,
     module: "tasks",
   },
   {
     title: "課表",
-    href: "/schedule",
+    href: "/dashboard/schedule",
     icon: Calendar,
     module: "schedule",
   },
   {
     title: "學習系統",
-    href: "/dashboard",
+    href: "/dashboard/study",
     icon: GraduationCap,
     module: "study",
     children: [
@@ -85,19 +85,19 @@ const navItems: NavItem[] = [
   },
   {
     title: "健康記錄",
-    href: "/health",
+    href: "/dashboard/health",
     icon: Dumbbell,
     module: "health",
   },
   {
     title: "收支記錄",
-    href: "/finance",
+    href: "/dashboard/finance",
     icon: Wallet,
     module: "finance",
   },
   {
     title: "設定",
-    href: "/settings",
+    href: "/dashboard/settings",
     icon: Settings,
   },
 ]
@@ -163,7 +163,7 @@ export function Sidebar() {
 
   // 判斷是否為當前路徑
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/"
+    if (href === "/dashboard") return pathname === "/dashboard"
     return pathname === href || pathname.startsWith(href + "/")
   }
 
