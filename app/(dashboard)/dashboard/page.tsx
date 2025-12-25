@@ -74,7 +74,21 @@ import type {
   FinanceRecord,
   HealthExercise,
   HealthMetric,
+  TablesUpdate,
 } from "@/types/database.types"
+
+// Habit with today's log
+type HabitWithLog = Habit & { log?: HabitLog }
+
+type DeletableTable = 
+  | "tasks" 
+  | "finance_records" 
+  | "health_exercises" 
+  | "health_metrics"
+  | "journals_life"
+  | "journals_learning"
+  | "journals_reading"
+  | "journals_gratitude"
 
 // 時段對照表
 const SLOT_TIMES: Record<number, { start: string; end: string }> = {
@@ -120,7 +134,7 @@ export default function DashboardPage() {
   // 各模組資料
   const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
-  const [habits, setHabits] = useState<(Habit & { log?: HabitLog })[]>([])
+  const [habits, setHabits] = useState<HabitWithLog[]>([])
   const [journalLife, setJournalLife] = useState<JournalLife | null>(null)
   const [journalLearning, setJournalLearning] = useState<JournalLearning | null>(null)
   const [journalReading, setJournalReading] = useState<JournalReading | null>(null)
@@ -346,7 +360,7 @@ export default function DashboardPage() {
       .eq("user_id", user.id)
       .eq("day_of_week", dayOfWeek)
       .order("slot_number", { ascending: true })
-    setScheduleSlots(data || [])
+    setScheduleSlots((data ?? []) as ScheduleSlot[])
   }
 
   const fetchTasks = async () => {
@@ -358,7 +372,7 @@ export default function DashboardPage() {
       .eq("user_id", user.id)
       .eq("due_date", selectedDateKey)
       .order("is_important", { ascending: false })
-    setTasks(data || [])
+    setTasks((data ?? []) as Task[])
   }
 
   const fetchHabits = async () => {
@@ -366,31 +380,34 @@ export default function DashboardPage() {
     if (!user) return
 
     // 取得所有啟用的習慣
-    const { data: habitsData } = await supabase
+    const { data: rawHabitsData } = await supabase
       .from("habits")
       .select("*")
       .eq("user_id", user.id)
       .eq("is_active", true)
 
-    if (!habitsData) {
+    const habitsData = (rawHabitsData ?? []) as Habit[]
+
+    if (habitsData.length === 0) {
       setHabits([])
       return
     }
 
     // 取得當日打卡記錄
-    const { data: logsData } = await supabase
+    const { data: rawLogsData } = await supabase
       .from("habit_logs")
       .select("*")
       .eq("user_id", user.id)
       .eq("date", selectedDateKey)
 
-    const logsMap = new Map(logsData?.map(l => [l.habit_id, l]) || [])
+    const logsData = (rawLogsData ?? []) as HabitLog[]
+    const logsMap = new Map(logsData.map(l => [l.habit_id, l]))
 
     // 過濾當天需要執行的習慣
     const jsDay = getDay(selectedDate)
     const dayOfWeek = jsDay === 0 ? 7 : jsDay
 
-    const filteredHabits = habitsData
+    const filteredHabits: HabitWithLog[] = habitsData
       .filter(h => h.target_days?.includes(dayOfWeek))
       .map(h => ({ ...h, log: logsMap.get(h.id) }))
 
@@ -406,7 +423,7 @@ export default function DashboardPage() {
       .eq("user_id", user.id)
       .eq("date", selectedDateKey)
       .single()
-    setJournalLife(data)
+    setJournalLife(data as JournalLife | null)
   }
 
   const fetchJournalLearning = async () => {
@@ -418,7 +435,7 @@ export default function DashboardPage() {
       .eq("user_id", user.id)
       .eq("date", selectedDateKey)
       .single()
-    setJournalLearning(data)
+    setJournalLearning(data as JournalLearning | null)
   }
 
   const fetchJournalReading = async () => {
@@ -430,7 +447,7 @@ export default function DashboardPage() {
       .eq("user_id", user.id)
       .eq("date", selectedDateKey)
       .single()
-    setJournalReading(data)
+    setJournalReading(data as JournalReading | null)
   }
 
   const fetchJournalGratitude = async () => {
@@ -442,7 +459,7 @@ export default function DashboardPage() {
       .eq("user_id", user.id)
       .eq("date", selectedDateKey)
       .single()
-    setJournalGratitude(data)
+    setJournalGratitude(data as JournalGratitude | null)
   }
 
   const fetchFinance = async () => {
@@ -454,7 +471,7 @@ export default function DashboardPage() {
       .eq("user_id", user.id)
       .eq("date", selectedDateKey)
       .order("created_at", { ascending: false })
-    setFinanceRecords(data || [])
+    setFinanceRecords((data ?? []) as FinanceRecord[])
   }
 
   const fetchExercises = async () => {
@@ -466,7 +483,7 @@ export default function DashboardPage() {
       .eq("user_id", user.id)
       .eq("date", selectedDateKey)
       .order("created_at", { ascending: false })
-    setExercises(data || [])
+    setExercises((data ?? []) as HealthExercise[])
   }
 
   const fetchHealthMetrics = async () => {
@@ -478,7 +495,7 @@ export default function DashboardPage() {
       .eq("user_id", user.id)
       .eq("date", selectedDateKey)
       .order("created_at", { ascending: false })
-    setHealthMetrics(data || [])
+    setHealthMetrics((data ?? []) as HealthMetric[])
   }
 
   // ============================================
@@ -534,7 +551,7 @@ export default function DashboardPage() {
   }
 
   // 習慣打卡
-  const toggleHabitLog = async (habit: Habit & { log?: HabitLog }) => {
+  const toggleHabitLog = async (habit: HabitWithLog) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
@@ -748,7 +765,7 @@ export default function DashboardPage() {
   }
 
   // 刪除記錄
-  const handleDelete = async (table: string, id: string) => {
+  const handleDelete = async (table: DeletableTable, id: string) => {
     await supabase.from(table).delete().eq("id", id)
     
     switch (table) {
@@ -1055,7 +1072,6 @@ export default function DashboardPage() {
               <Plus className="w-3 h-3 mr-1" /> 新增
             </Button>
           </div>
-          {/* 統計 */}
           <div className="flex gap-4 mb-3 text-sm">
             <span className="text-green-600 flex items-center gap-1"><TrendingUp className="w-4 h-4" /> 收入: ${totalIncome}</span>
             <span className="text-red-600 flex items-center gap-1"><TrendingDown className="w-4 h-4" /> 支出: ${totalExpense}</span>
@@ -1170,21 +1186,22 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-2">
               {healthMetrics.map((metric) => {
-                const MetricIcon = metricIcons[metric.metric_type] || Activity
+                const metricType = metric.metric_type || "weight"
+                const MetricIcon = metricIcons[metricType] || Activity
                 return (
                   <div key={metric.id} className="flex items-center gap-3 p-3 bg-white rounded-lg border">
                     <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
                       <MetricIcon className="w-4 h-4" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium">{metricLabels[metric.metric_type] || metric.metric_type}</p>
+                      <p className="font-medium">{metricLabels[metricType] || metricType}</p>
                       {metric.note && <p className="text-sm text-gray-500">{metric.note}</p>}
                     </div>
                     <span className="font-semibold">
-                      {metric.metric_type === "blood_pressure" && metric.value_secondary
+                      {metricType === "blood_pressure" && metric.value_secondary
                         ? `${metric.value_primary}/${metric.value_secondary}`
                         : metric.value_primary
-                      } {metricUnits[metric.metric_type]}
+                      } {metricUnits[metricType]}
                     </span>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openDialog("health", metric)}>
                       <Pencil className="w-3 h-3" />

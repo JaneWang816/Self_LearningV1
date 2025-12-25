@@ -42,7 +42,6 @@ import {
   Play,
   ArrowLeft,
 } from "lucide-react"
-import type { Habit, HabitLog } from "@/types/database.types"
 
 // 預設圖示選項
 const ICON_OPTIONS = ["🎯", "📚", "🏃", "💪", "🧘", "💤", "💧", "🥗", "📝", "🎨", "🎵", "🌱"]
@@ -70,7 +69,18 @@ const DAY_OPTIONS = [
   { value: 7, label: "日" },
 ]
 
-interface HabitWithStats extends Habit {
+interface HabitWithStats {
+  id: string
+  user_id: string
+  title: string
+  description: string | null
+  icon: string | null
+  color: string | null
+  frequency: string | null
+  target_days: number[] | null
+  is_active: boolean | null
+  created_at: string | null
+  updated_at: string | null
   weekLogs: Record<string, boolean>
   currentStreak: number
   totalCompleted: number
@@ -82,7 +92,7 @@ export default function HabitsPage() {
 
   // 編輯對話框
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingHabit, setEditingHabit] = useState<Habit | null>(null)
+  const [editingHabit, setEditingHabit] = useState<HabitWithStats | null>(null)
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -95,7 +105,7 @@ export default function HabitsPage() {
 
   // 刪除確認
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [deletingHabit, setDeletingHabit] = useState<Habit | null>(null)
+  const [deletingHabit, setDeletingHabit] = useState<HabitWithStats | null>(null)
 
   // 選單狀態
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
@@ -229,7 +239,7 @@ export default function HabitsPage() {
   }
 
   // 開啟新增/編輯對話框
-  const openDialog = (habit?: Habit) => {
+  const openDialog = (habit?: HabitWithStats) => {
     if (habit) {
       setEditingHabit(habit)
       setFormData({
@@ -296,7 +306,7 @@ export default function HabitsPage() {
   }
 
   // 切換啟用/暫停
-  const toggleActive = async (habit: Habit) => {
+  const toggleActive = async (habit: HabitWithStats) => {
     await supabase
       .from("habits")
       .update({ is_active: !habit.is_active })
@@ -328,7 +338,7 @@ export default function HabitsPage() {
   }
 
   // 開啟刪除確認
-  const openDeleteDialog = (habit: Habit) => {
+  const openDeleteDialog = (habit: HabitWithStats) => {
     setDeletingHabit(habit)
     setDeleteDialogOpen(true)
     setOpenMenuId(null)
