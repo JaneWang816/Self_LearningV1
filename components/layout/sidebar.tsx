@@ -6,7 +6,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabaseClient"
 import { cn } from "@/lib/utils"
-import type { ModuleType } from "@/types/supabase"
+import type { ModuleType } from "@/types/custom"
 import {
   LayoutDashboard,
   BookOpen,

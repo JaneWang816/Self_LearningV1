@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ChevronDown, ChevronUp, FileText } from "lucide-react"
-import type { Question, QuestionType } from "@/types/supabase"
+import type { Question, QuestionType } from "@/types/database.types"
 
 interface ExamExportProps {
   open: boolean

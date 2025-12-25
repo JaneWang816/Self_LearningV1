@@ -24,7 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Plus, X, Image, Upload } from "lucide-react"
-import type { Subject, Topic, QuestionType, Question } from "@/types/supabase"
+import type { Subject, Topic, QuestionType, Question } from "@/types/database.types"
 
 interface QuestionFormProps {
   open: boolean
