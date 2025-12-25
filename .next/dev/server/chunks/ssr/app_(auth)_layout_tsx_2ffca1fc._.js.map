@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Coding/Self_Learningv1/app/%28auth%29/layout.tsx"],"sourcesContent":["// app/(auth)/layout.tsx\r\nexport default function AuthLayout({\r\n  children,\r\n}: {\r\n  children: React.ReactNode\r\n}) {\r\n  return (\r\n    <div className=\"min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white p-4\">\r\n      <div className=\"w-full max-w-md\">\r\n        {children}\r\n      </div>\r\n    </div>\r\n  )\r\n}"],"names":[],"mappings":"AAAA,wBAAwB;;;;;;;AACT,SAAS,WAAW,EACjC,QAAQ,EAGT;IACC,qBACE,8OAAC;QAAI,WAAU;kBACb,cAAA,8OAAC;YAAI,WAAU;sBACZ;;;;;;;;;;;AAIT"}}]
-}

@@ -1,3 +1,0 @@
-{
-  "/(dashboard)/dashboard/flashcards/[deckId]/page": "app/(dashboard)/dashboard/flashcards/[deckId]/page.js"
-}
