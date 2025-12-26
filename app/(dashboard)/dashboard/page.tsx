@@ -73,9 +73,8 @@ import type {
   JournalGratitude,
   FinanceRecord,
   HealthExercise,
-  HealthMetric,
-  TablesUpdate,
-} from "@/types/database.types"
+  HealthMetric,  
+} from "@/types/custom"
 
 // Habit with today's log
 type HabitWithLog = Habit & { log?: HabitLog }

@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabaseClient"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, ZoomIn, ZoomOut, RotateCw, Download } from "lucide-react"
-import type { Unit, Topic, Subject } from "@/types/database.types"
+import type { Unit, Topic, Subject } from "@/types/custom"
 
 export default function UnitDetailPage() {
   const params = useParams()

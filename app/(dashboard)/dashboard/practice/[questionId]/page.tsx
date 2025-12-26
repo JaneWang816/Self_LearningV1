@@ -17,7 +17,7 @@ import {
   Eye,
   RotateCcw,
 } from "lucide-react"
-import type { Question, QuestionType } from "@/types/database.types"
+import type { Question, QuestionType } from "@/types/custom"
 
 export default function PracticeQuestionPage() {
   const params = useParams()

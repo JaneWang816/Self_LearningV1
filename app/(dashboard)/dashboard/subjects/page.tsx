@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { SubjectCard } from "@/components/subjects/subject-card"
 import { SubjectForm } from "@/components/subjects/subject-form"
 import { BookOpen, Plus } from "lucide-react"
-import type { Subject } from "@/types/database.types"
+import type { Subject } from "@/types/custom"
 
 export default function SubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([])

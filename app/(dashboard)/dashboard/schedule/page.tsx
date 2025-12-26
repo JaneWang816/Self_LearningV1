@@ -32,7 +32,7 @@ import {
   Clock,
   ArrowLeft,
 } from "lucide-react"
-import type { ScheduleSlot } from "@/types/database.types"
+import type { ScheduleSlot } from "@/types/custom"
 
 // 時段設定
 const SLOTS = [
