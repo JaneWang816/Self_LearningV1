@@ -42,7 +42,7 @@ import {
 } from "lucide-react"
 import { FlashcardImport } from "@/components/flashcards/flashcard-import"
 import { getNextReviewText } from "@/lib/sm2"
-import type { Deck, Flashcard } from "@/types/database.types"
+import type { Deck, Flashcard } from "@/types/custom"
 
 export default function DeckDetailPage() {
   const params = useParams()

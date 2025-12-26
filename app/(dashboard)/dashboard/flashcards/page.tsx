@@ -47,7 +47,7 @@ import {
   Volume2,
 } from "lucide-react"
 import { supportedLanguages, type LanguageCode } from "@/lib/speech"
-import type { Deck, Flashcard } from "@/types/database.types"
+import type { Deck, Flashcard } from "@/types/custom"
 
 interface DeckWithStats extends Deck {
   totalCards: number

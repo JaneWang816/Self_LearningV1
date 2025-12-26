@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 import { calculateSM2, getNextReviewText } from "@/lib/sm2"
 import { speakWithLang, stopSpeaking, type LanguageCode } from "@/lib/speech"
-import type { Deck, Flashcard } from "@/types/database.types"
+import type { Deck, Flashcard } from "@/types/custom"
 
 export default function ReviewPage() {
   const params = useParams()
