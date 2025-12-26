@@ -6,7 +6,7 @@ export default function Navbar() {
         <nav className="border-b bg-background">
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 <Link href="/" className="text-2xl font-bold text-primary">
-                    自主學習系統
+                    自我管理系統
                 </Link>
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" asChild>
