@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Upload, FileText, Download, CheckCircle, XCircle, AlertCircle } from "lucide-react"
-import type { Subject, QuestionType } from "@/types/database.types"
+import type { Subject, QuestionType } from "@/types/custom"
 
 interface QuestionImportProps {
   open: boolean

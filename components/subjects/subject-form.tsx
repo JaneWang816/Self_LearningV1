@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import type { Subject } from "@/types/database.types"
+import type { Subject } from "@/types/custom"
 
 interface SubjectFormProps {
   open: boolean

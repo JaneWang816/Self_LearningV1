@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { BookOpen, MoreVertical, Pencil, Trash2 } from "lucide-react"
-import type { Subject } from "@/types/database.types"
+import type { Subject } from "@/types/custom"
 
 interface SubjectCardProps {
   subject: Subject
