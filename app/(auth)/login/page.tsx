@@ -16,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { BookOpen } from "lucide-react"
+import { CalendarDays } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -53,11 +53,11 @@ export default function LoginPage() {
       <CardHeader className="text-center">
         <div className="flex justify-center mb-4">
           <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-            <BookOpen className="w-6 h-6 text-blue-600" />
+            <CalendarDays className="w-6 h-6 text-blue-600" />
           </div>
         </div>
         <CardTitle className="text-2xl">歡迎回來</CardTitle>
-        <CardDescription>登入你的自主學習帳號</CardDescription>
+        <CardDescription>登入你的日歷帳號</CardDescription>
       </CardHeader>
 
       <form onSubmit={handleLogin}>
@@ -109,7 +109,6 @@ export default function LoginPage() {
           >
             {loading ? "登入中..." : "登入"}
           </Button>
-
           <p className="text-sm text-center text-gray-600">
             還沒有帳號？{" "}
             <Link href="/register" className="text-blue-600 hover:underline">

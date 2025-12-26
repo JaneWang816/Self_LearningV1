@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabaseClient"
 import { Button } from "@/components/ui/button"
-import { LogOut, User } from "lucide-react"
+import { LogOut, User, CalendarDays } from "lucide-react"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 
 export function Header() {
@@ -42,7 +42,8 @@ export function Header() {
       <div className="flex items-center justify-between h-16 px-4 md:px-6">
         {/* 手機版 Logo */}
         <div className="flex items-center md:hidden">
-          <span className="text-lg font-bold text-gray-800">學習平台</span>
+          <CalendarDays className="w-6 h-6 text-blue-600" />
+          <span className="ml-2 text-lg font-bold text-gray-800">日歷</span>
         </div>
 
         {/* 桌面版留空 */}

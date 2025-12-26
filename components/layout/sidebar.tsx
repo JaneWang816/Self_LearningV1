@@ -24,6 +24,7 @@ import {
   FileQuestion,
   XCircle,
   Lightbulb,
+  CalendarDays,
 } from "lucide-react"
 
 // 導航項目定義
@@ -171,8 +172,9 @@ export function Sidebar() {
     <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-white border-r">
       {/* Logo */}
       <div className="flex items-center h-16 px-6 border-b">
-        <BookOpen className="w-8 h-8 text-blue-600" />
-        <span className="ml-3 text-xl font-bold text-gray-800">學習平台</span>
+        <CalendarDays className="w-8 h-8 text-blue-600" />
+        <span className="ml-3 text-xl font-bold text-gray-800">日歷</span>
+        <span className="ml-1 text-sm text-blue-600 font-medium">Dayli</span>
       </div>
 
       {/* Navigation */}
