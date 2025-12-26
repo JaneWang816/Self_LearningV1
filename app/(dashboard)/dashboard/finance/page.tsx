@@ -46,44 +46,55 @@ import {
   ArrowDownCircle,
   Search,
   PieChart,
+  Banknote,
 } from "lucide-react"
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/types/custom"
-import type { FinanceRecord } from "@/types/custom"
 
-// 分類圖示
-const categoryIcons: Record<string, string> = {
-  // 支出
-  飲食: "🍜",
-  交通: "🚌",
-  娛樂: "🎮",
-  購物: "🛒",
-  學習: "📚",
-  // 收入
-  零用錢: "💵",
-  獎學金: "🏆",
-  打工: "💼",
-  禮金: "🎁",
-  // 通用
-  其他: "📦",
+// 分類類型
+interface FinanceCategory {
+  id: string
+  user_id: string | null
+  type: "income" | "expense"
+  name: string
+  icon: string | null
+  color: string | null
+  sort_order: number
+  is_default: boolean
+}
+
+// 記錄類型（含分類資訊）
+interface FinanceRecordWithCategory {
+  id: string
+  user_id: string
+  type: "income" | "expense"
+  category_id: string | null
+  category: string // 舊欄位，向後相容
+  amount: number
+  description: string | null
+  date: string
+  created_at: string | null
+  // 關聯的分類資訊
+  finance_categories: FinanceCategory | null
 }
 
 export default function FinancePage() {
-  const [records, setRecords] = useState<FinanceRecord[]>([])
+  const [records, setRecords] = useState<FinanceRecordWithCategory[]>([])
+  const [categories, setCategories] = useState<FinanceCategory[]>([])
   const [loading, setLoading] = useState(true)
+  const [initialBalance, setInitialBalance] = useState(0)
+  const [userId, setUserId] = useState<string | null>(null)
 
   // 篩選
   const [filterType, setFilterType] = useState<string>("all")
   const [filterMonth, setFilterMonth] = useState<string>(
-    new Date().toISOString().slice(0, 7) // YYYY-MM
+    new Date().toISOString().slice(0, 7)
   )
   const [searchQuery, setSearchQuery] = useState("")
 
   // 表單狀態
   const [formOpen, setFormOpen] = useState(false)
-  const [editingRecord, setEditingRecord] = useState<FinanceRecord | null>(null)
+  const [editingRecord, setEditingRecord] = useState<FinanceRecordWithCategory | null>(null)
   const [recordType, setRecordType] = useState<"income" | "expense">("expense")
-  const [category, setCategory] = useState("")
-  const [customCategory, setCustomCategory] = useState("")
+  const [categoryId, setCategoryId] = useState("")
   const [amount, setAmount] = useState<number | null>(null)
   const [description, setDescription] = useState("")
   const [date, setDate] = useState(new Date().toISOString().split("T")[0])
@@ -91,100 +102,140 @@ export default function FinancePage() {
 
   // 刪除狀態
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [deletingRecord, setDeletingRecord] = useState<FinanceRecord | null>(null)
+  const [deletingRecord, setDeletingRecord] = useState<FinanceRecordWithCategory | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
   // 載入資料
-  const fetchRecords = async () => {
+  const fetchData = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data } = await supabase
-      .from("finance_records")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("date", { ascending: false })
+    setUserId(user.id)
 
-    if (data) setRecords(data)
+    // 分開查詢記錄和分類
+    const [recordsRes, categoriesRes, profileRes] = await Promise.all([
+      supabase
+        .from("finance_records")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("date", { ascending: false }),
+      supabase
+        .from("finance_categories")
+        .select("*")
+        .or(`user_id.eq.${user.id},user_id.is.null`)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("profiles")
+        .select("initial_balance")
+        .eq("id", user.id)
+        .single(),
+    ])
+
+    // 建立分類對照表
+    const categoryMap = new Map<string, FinanceCategory>()
+    if (categoriesRes.data) {
+      categoriesRes.data.forEach((cat) => {
+        categoryMap.set(cat.id, cat as FinanceCategory)
+      })
+      setCategories(categoriesRes.data as FinanceCategory[])
+    }
+
+    // 組合記錄與分類
+    if (recordsRes.data) {
+      const recordsWithCategory: FinanceRecordWithCategory[] = recordsRes.data.map((record) => ({
+        id: record.id,
+        user_id: record.user_id,
+        type: record.type as "income" | "expense",
+        category_id: record.category_id,
+        category: record.category,
+        amount: record.amount,
+        description: record.description,
+        date: record.date,
+        created_at: record.created_at,
+        finance_categories: record.category_id ? categoryMap.get(record.category_id) || null : null,
+      }))
+      setRecords(recordsWithCategory)
+    }
+
+    if (profileRes.data?.initial_balance) {
+      setInitialBalance(Number(profileRes.data.initial_balance))
+    }
     setLoading(false)
   }
 
   useEffect(() => {
-    fetchRecords()
+    fetchData()
   }, [])
 
-  // 取得所有使用過的分類（用於自訂分類建議）
-  const usedCategories = useMemo(() => {
-    const expenseSet = new Set<string>(EXPENSE_CATEGORIES)
-    const incomeSet = new Set<string>(INCOME_CATEGORIES)
-    
-    records.forEach((r) => {
-      if (r.type === "expense") {
-        expenseSet.add(r.category)
-      } else {
-        incomeSet.add(r.category)
-      }
-    })
-
-    return {
-      expense: Array.from(expenseSet),
-      income: Array.from(incomeSet),
-    }
-  }, [records])
+  // 依類型分類
+  const expenseCategories = useMemo(() => 
+    categories.filter(c => c.type === "expense"), [categories])
+  const incomeCategories = useMemo(() => 
+    categories.filter(c => c.type === "income"), [categories])
 
   // 篩選記錄
   const filteredRecords = useMemo(() => {
     return records.filter((record) => {
-      // 類型篩選
       if (filterType !== "all" && record.type !== filterType) return false
-
-      // 月份篩選
       if (filterMonth && !record.date.startsWith(filterMonth)) return false
-
-      // 搜尋
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
+        const categoryName = record.finance_categories?.name || record.category || ""
         return (
-          record.category.toLowerCase().includes(query) ||
+          categoryName.toLowerCase().includes(query) ||
           record.description?.toLowerCase().includes(query)
         )
       }
-
       return true
     })
   }, [records, filterType, filterMonth, searchQuery])
 
-  // 計算統計
-  const stats = useMemo(() => {
+  // 計算累計結餘
+  const totalStats = useMemo(() => {
+    const totalIncome = records
+      .filter((r) => r.type === "income")
+      .reduce((sum, r) => sum + Number(r.amount), 0)
+    const totalExpense = records
+      .filter((r) => r.type === "expense")
+      .reduce((sum, r) => sum + Number(r.amount), 0)
+    return {
+      totalIncome,
+      totalExpense,
+      totalBalance: initialBalance + totalIncome - totalExpense,
+    }
+  }, [records, initialBalance])
+
+  // 計算當月統計
+  const monthStats = useMemo(() => {
     const monthRecords = records.filter((r) => r.date.startsWith(filterMonth))
-    
     const income = monthRecords
       .filter((r) => r.type === "income")
       .reduce((sum, r) => sum + Number(r.amount), 0)
-    
     const expense = monthRecords
       .filter((r) => r.type === "expense")
       .reduce((sum, r) => sum + Number(r.amount), 0)
-
-    return {
-      income,
-      expense,
-      balance: income - expense,
-    }
+    return { income, expense, balance: income - expense }
   }, [records, filterMonth])
 
   // 分類統計
   const categoryStats = useMemo(() => {
     const monthRecords = filteredRecords.filter((r) => r.type === "expense")
-    const categoryMap = new Map<string, number>()
+    const categoryMap = new Map<string, { name: string; icon: string; amount: number }>()
 
     monthRecords.forEach((r) => {
-      const current = categoryMap.get(r.category) || 0
-      categoryMap.set(r.category, current + Number(r.amount))
+      const cat = r.finance_categories
+      const key = cat?.id || r.category
+      const current = categoryMap.get(key) || {
+        name: cat?.name || r.category,
+        icon: cat?.icon || "📦",
+        amount: 0,
+      }
+      current.amount += Number(r.amount)
+      categoryMap.set(key, current)
     })
 
-    return Array.from(categoryMap.entries())
-      .sort((a, b) => b[1] - a[1])
+    return Array.from(categoryMap.values())
+      .sort((a, b) => b.amount - a.amount)
       .slice(0, 5)
   }, [filteredRecords])
 
@@ -192,8 +243,7 @@ export default function FinancePage() {
   const openCreateForm = (type: "income" | "expense" = "expense") => {
     setEditingRecord(null)
     setRecordType(type)
-    setCategory("")
-    setCustomCategory("")
+    setCategoryId("")
     setAmount(null)
     setDescription("")
     setDate(new Date().toISOString().split("T")[0])
@@ -201,20 +251,10 @@ export default function FinancePage() {
   }
 
   // 開啟編輯表單
-  const openEditForm = (record: FinanceRecord) => {
+  const openEditForm = (record: FinanceRecordWithCategory) => {
     setEditingRecord(record)
-    setRecordType(record.type as "income" | "expense")
-    
-    // 檢查是否為預設分類
-    const defaultCategories = record.type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES
-    if (defaultCategories.includes(record.category as any)) {
-      setCategory(record.category)
-      setCustomCategory("")
-    } else {
-      setCategory("custom")
-      setCustomCategory(record.category)
-    }
-    
+    setRecordType(record.type)
+    setCategoryId(record.category_id || "")
     setAmount(Number(record.amount))
     setDescription(record.description || "")
     setDate(record.date)
@@ -223,20 +263,15 @@ export default function FinancePage() {
 
   // 儲存記錄
   const handleSave = async () => {
-    const finalCategory = category === "custom" ? customCategory.trim() : category
-    if (!finalCategory || !amount) return
+    if (!categoryId || !amount || !userId) return
 
     setSaving(true)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      setSaving(false)
-      return
-    }
-
     const recordData = {
       type: recordType,
-      category: finalCategory,
+      category_id: categoryId,
+      // 同時更新 category 欄位以向後相容
+      category: categories.find(c => c.id === categoryId)?.name || "",
       amount,
       description: description.trim() || null,
       date,
@@ -252,60 +287,47 @@ export default function FinancePage() {
         .from("finance_records")
         .insert({
           ...recordData,
-          user_id: user.id,
+          user_id: userId,
         })
     }
 
     setSaving(false)
     setFormOpen(false)
-    fetchRecords()
+    fetchData()
   }
 
-  // 開啟刪除確認
-  const openDeleteDialog = (record: FinanceRecord) => {
+  // 刪除記錄
+  const openDeleteDialog = (record: FinanceRecordWithCategory) => {
     setDeletingRecord(record)
     setDeleteDialogOpen(true)
   }
 
-  // 刪除記錄
   const handleDelete = async () => {
     if (!deletingRecord) return
-
     setDeleteLoading(true)
-
-    await supabase
-      .from("finance_records")
-      .delete()
-      .eq("id", deletingRecord.id)
-
+    await supabase.from("finance_records").delete().eq("id", deletingRecord.id)
     setDeleteLoading(false)
     setDeleteDialogOpen(false)
     setDeletingRecord(null)
-    fetchRecords()
+    fetchData()
   }
 
-  // 格式化日期
+  // 格式化
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString("zh-TW", {
-      month: "short",
-      day: "numeric",
-      weekday: "short",
-    })
+    const d = new Date(dateStr)
+    return d.toLocaleDateString("zh-TW", { month: "short", day: "numeric", weekday: "short" })
   }
 
-  // 格式化金額
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat("zh-TW").format(amount)
   }
 
-  // 月份選項
   const monthOptions = useMemo(() => {
     const options: string[] = []
     const now = new Date()
     for (let i = 0; i < 12; i++) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      options.push(date.toISOString().slice(0, 7))
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      options.push(d.toISOString().slice(0, 7))
     }
     return options
   }, [])
@@ -313,6 +335,16 @@ export default function FinancePage() {
   const formatMonthLabel = (month: string) => {
     const [year, m] = month.split("-")
     return `${year}年${parseInt(m)}月`
+  }
+
+  // 取得分類顯示資訊
+  const getCategoryDisplay = (record: FinanceRecordWithCategory) => {
+    const cat = record.finance_categories
+    return {
+      name: cat?.name || record.category || "未分類",
+      icon: cat?.icon || "📦",
+      color: cat?.color || "#6b7280",
+    }
   }
 
   if (loading) {
@@ -343,16 +375,30 @@ export default function FinancePage() {
         </div>
       </div>
 
-      {/* 月份統計 */}
+      {/* 累計結餘 */}
+      <Card className={`bg-gradient-to-br ${totalStats.totalBalance >= 0 ? "from-blue-500 to-indigo-600" : "from-orange-500 to-red-600"}`}>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between text-white">
+            <div>
+              <p className="text-sm opacity-80">累計結餘</p>
+              <p className="text-4xl font-bold mt-1">${formatAmount(totalStats.totalBalance)}</p>
+              <p className="text-sm opacity-70 mt-2">
+                期初 ${formatAmount(initialBalance)} + 收入 ${formatAmount(totalStats.totalIncome)} - 支出 ${formatAmount(totalStats.totalExpense)}
+              </p>
+            </div>
+            <Banknote className="w-16 h-16 opacity-30" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 當月統計 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">收入</p>
-                <p className="text-2xl font-bold text-green-600">
-                  +${formatAmount(stats.income)}
-                </p>
+                <p className="text-sm text-gray-600">{formatMonthLabel(filterMonth)} 收入</p>
+                <p className="text-2xl font-bold text-green-600">+${formatAmount(monthStats.income)}</p>
               </div>
               <TrendingUp className="w-8 h-8 text-green-400" />
             </div>
@@ -363,60 +409,51 @@ export default function FinancePage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">支出</p>
-                <p className="text-2xl font-bold text-red-600">
-                  -${formatAmount(stats.expense)}
-                </p>
+                <p className="text-sm text-gray-600">{formatMonthLabel(filterMonth)} 支出</p>
+                <p className="text-2xl font-bold text-red-600">-${formatAmount(monthStats.expense)}</p>
               </div>
               <TrendingDown className="w-8 h-8 text-red-400" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className={`bg-gradient-to-br ${stats.balance >= 0 ? "from-blue-50 to-indigo-50" : "from-orange-50 to-amber-50"}`}>
+        <Card className={`bg-gradient-to-br ${monthStats.balance >= 0 ? "from-blue-50 to-indigo-50" : "from-orange-50 to-amber-50"}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">結餘</p>
-                <p className={`text-2xl font-bold ${stats.balance >= 0 ? "text-blue-600" : "text-orange-600"}`}>
-                  ${formatAmount(stats.balance)}
+                <p className="text-sm text-gray-600">{formatMonthLabel(filterMonth)} 結餘</p>
+                <p className={`text-2xl font-bold ${monthStats.balance >= 0 ? "text-blue-600" : "text-orange-600"}`}>
+                  ${formatAmount(monthStats.balance)}
                 </p>
               </div>
-              <Wallet className={`w-8 h-8 ${stats.balance >= 0 ? "text-blue-400" : "text-orange-400"}`} />
+              <Wallet className={`w-8 h-8 ${monthStats.balance >= 0 ? "text-blue-400" : "text-orange-400"}`} />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* 支出分類統計 */}
+      {/* 分類統計 */}
       {categoryStats.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <PieChart className="w-4 h-4" />
-              本月支出分類
+              {formatMonthLabel(filterMonth)} 支出分類
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {categoryStats.map(([cat, amt]) => {
-                const percentage = Math.round((amt / stats.expense) * 100)
+              {categoryStats.map((stat) => {
+                const percentage = Math.round((stat.amount / monthStats.expense) * 100) || 0
                 return (
-                  <div key={cat} className="flex items-center gap-3">
-                    <span className="text-lg">{categoryIcons[cat] || "📦"}</span>
-                    <span className="text-sm text-gray-700 w-16">{cat}</span>
+                  <div key={stat.name} className="flex items-center gap-3">
+                    <span className="text-lg">{stat.icon}</span>
+                    <span className="text-sm text-gray-700 w-16">{stat.name}</span>
                     <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-amber-500 rounded-full"
-                        style={{ width: `${percentage}%` }}
-                      />
+                      <div className="h-full bg-amber-500 rounded-full" style={{ width: `${percentage}%` }} />
                     </div>
-                    <span className="text-sm text-gray-600 w-20 text-right">
-                      ${formatAmount(amt)}
-                    </span>
-                    <span className="text-xs text-gray-400 w-10 text-right">
-                      {percentage}%
-                    </span>
+                    <span className="text-sm text-gray-600 w-20 text-right">${formatAmount(stat.amount)}</span>
+                    <span className="text-xs text-gray-400 w-10 text-right">{percentage}%</span>
                   </div>
                 )
               })}
@@ -433,9 +470,7 @@ export default function FinancePage() {
           </SelectTrigger>
           <SelectContent>
             {monthOptions.map((month) => (
-              <SelectItem key={month} value={month}>
-                {formatMonthLabel(month)}
-              </SelectItem>
+              <SelectItem key={month} value={month}>{formatMonthLabel(month)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -485,16 +520,20 @@ export default function FinancePage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {filteredRecords.map((record) => (
-            <RecordCard
-              key={record.id}
-              record={record}
-              onEdit={() => openEditForm(record)}
-              onDelete={() => openDeleteDialog(record)}
-              formatDate={formatDate}
-              formatAmount={formatAmount}
-            />
-          ))}
+          {filteredRecords.map((record) => {
+            const catDisplay = getCategoryDisplay(record)
+            return (
+              <RecordCard
+                key={record.id}
+                record={record}
+                categoryDisplay={catDisplay}
+                onEdit={() => openEditForm(record)}
+                onDelete={() => openDeleteDialog(record)}
+                formatDate={formatDate}
+                formatAmount={formatAmount}
+              />
+            )
+          })}
         </div>
       )}
 
@@ -519,7 +558,7 @@ export default function FinancePage() {
                 className={recordType === "expense" ? "bg-red-600 hover:bg-red-700" : ""}
                 onClick={() => {
                   setRecordType("expense")
-                  setCategory("")
+                  setCategoryId("")
                 }}
               >
                 <ArrowDownCircle className="w-4 h-4 mr-2" />
@@ -531,7 +570,7 @@ export default function FinancePage() {
                 className={recordType === "income" ? "bg-green-600 hover:bg-green-700" : ""}
                 onClick={() => {
                   setRecordType("income")
-                  setCategory("")
+                  setCategoryId("")
                 }}
               >
                 <ArrowUpCircle className="w-4 h-4 mr-2" />
@@ -542,17 +581,16 @@ export default function FinancePage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>分類 *</Label>
-                <Select value={category} onValueChange={setCategory}>
+                <Select value={categoryId} onValueChange={setCategoryId}>
                   <SelectTrigger>
                     <SelectValue placeholder="選擇分類" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(recordType === "expense" ? usedCategories.expense : usedCategories.income).map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {categoryIcons[cat] || "📦"} {cat}
+                    {(recordType === "expense" ? expenseCategories : incomeCategories).map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.icon || "📦"} {cat.name}
                       </SelectItem>
                     ))}
-                    <SelectItem value="custom">✏️ 自訂分類</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -565,17 +603,6 @@ export default function FinancePage() {
                 />
               </div>
             </div>
-
-            {category === "custom" && (
-              <div className="space-y-2">
-                <Label>自訂分類名稱 *</Label>
-                <Input
-                  value={customCategory}
-                  onChange={(e) => setCustomCategory(e.target.value)}
-                  placeholder="輸入分類名稱"
-                />
-              </div>
-            )}
 
             <div className="space-y-2">
               <Label>金額 *</Label>
@@ -604,7 +631,7 @@ export default function FinancePage() {
             <Button variant="outline" onClick={() => setFormOpen(false)}>取消</Button>
             <Button
               onClick={handleSave}
-              disabled={!(category === "custom" ? customCategory.trim() : category) || !amount || saving}
+              disabled={!categoryId || !amount || saving}
               className={recordType === "income" ? "bg-green-600 hover:bg-green-700" : "bg-amber-600 hover:bg-amber-700"}
             >
               {saving ? "儲存中..." : "儲存"}
@@ -639,12 +666,14 @@ export default function FinancePage() {
 // 記錄卡片
 function RecordCard({
   record,
+  categoryDisplay,
   onEdit,
   onDelete,
   formatDate,
   formatAmount,
 }: {
-  record: FinanceRecord
+  record: FinanceRecordWithCategory
+  categoryDisplay: { name: string; icon: string; color: string }
   onEdit: () => void
   onDelete: () => void
   formatDate: (date: string) => string
@@ -652,7 +681,6 @@ function RecordCard({
 }) {
   const [showMenu, setShowMenu] = useState(false)
   const isIncome = record.type === "income"
-  const icon = categoryIcons[record.category] || "📦"
 
   return (
     <Card className="group hover:shadow-md transition-shadow">
@@ -661,14 +689,14 @@ function RecordCard({
           <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl ${
             isIncome ? "bg-green-100" : "bg-red-100"
           }`}>
-            {icon}
+            {categoryDisplay.icon}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className={`text-xs px-2 py-0.5 rounded ${
                 isIncome ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
               }`}>
-                {record.category}
+                {categoryDisplay.name}
               </span>
               <span className="text-sm text-gray-500 flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5" />

@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { supabase } from "@/lib/supabaseClient"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,7 +29,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
-  Settings,
   User,
   Layers,
   Shield,
@@ -42,9 +42,6 @@ import {
   GraduationCap,
   ListTodo,
   Tag,
-  Plus,
-  Trash2,
-  X,
 } from "lucide-react"
 import type { Profile, ModuleType } from "@/types/custom"
 
@@ -107,10 +104,6 @@ const MODULE_CONFIG: {
   },
 ]
 
-// 預設分類
-const DEFAULT_EXPENSE_CATEGORIES = ["飲食", "交通", "娛樂", "購物", "學習", "其他"]
-const DEFAULT_INCOME_CATEGORIES = ["零用錢", "獎學金", "打工", "禮金", "其他"]
-
 export default function SettingsPage() {
   const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -136,12 +129,9 @@ export default function SettingsPage() {
   // 登出確認
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
 
-  // 分類管理
-  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
-  const [expenseCategories, setExpenseCategories] = useState<string[]>([])
-  const [incomeCategories, setIncomeCategories] = useState<string[]>([])
-  const [newExpenseCategory, setNewExpenseCategory] = useState("")
-  const [newIncomeCategory, setNewIncomeCategory] = useState("")
+  // 期初餘額
+  const [initialBalance, setInitialBalance] = useState<number>(0)
+  const [savingBalance, setSavingBalance] = useState(false)
 
   // 載入資料
   useEffect(() => {
@@ -163,31 +153,7 @@ export default function SettingsPage() {
         setNickname(profileData.nickname || "")
         setAvatarUrl(profileData.avatar_url || "")
         setEnabledModules((profileData.enabled_modules as ModuleType[]) || ["journal", "habits", "tasks", "schedule"])
-      }
-
-      // 載入自訂分類（從 finance_records 取得已使用的分類）
-      const { data: records } = await supabase
-        .from("finance_records")
-        .select("type, category")
-        .eq("user_id", user.id)
-
-      if (records) {
-        const expense = new Set(DEFAULT_EXPENSE_CATEGORIES)
-        const income = new Set(DEFAULT_INCOME_CATEGORIES)
-        
-        records.forEach((r) => {
-          if (r.type === "expense") {
-            expense.add(r.category)
-          } else {
-            income.add(r.category)
-          }
-        })
-
-        setExpenseCategories(Array.from(expense))
-        setIncomeCategories(Array.from(income))
-      } else {
-        setExpenseCategories(DEFAULT_EXPENSE_CATEGORIES)
-        setIncomeCategories(DEFAULT_INCOME_CATEGORIES)
+        setInitialBalance(profileData.initial_balance ? Number(profileData.initial_balance) : 0)
       }
 
       setLoading(false)
@@ -211,6 +177,22 @@ export default function SettingsPage() {
       .eq("id", profile.id)
 
     setSavingProfile(false)
+  }
+
+  // 儲存期初餘額
+  const handleSaveBalance = async () => {
+    if (!profile) return
+
+    setSavingBalance(true)
+
+    await supabase
+      .from("profiles")
+      .update({
+        initial_balance: initialBalance,
+      })
+      .eq("id", profile.id)
+
+    setSavingBalance(false)
   }
 
   // 切換模組
@@ -282,33 +264,6 @@ export default function SettingsPage() {
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push("/login")
-  }
-
-  // 新增支出分類
-  const addExpenseCategory = () => {
-    const cat = newExpenseCategory.trim()
-    if (cat && !expenseCategories.includes(cat)) {
-      setExpenseCategories([...expenseCategories, cat])
-      setNewExpenseCategory("")
-    }
-  }
-
-  // 新增收入分類
-  const addIncomeCategory = () => {
-    const cat = newIncomeCategory.trim()
-    if (cat && !incomeCategories.includes(cat)) {
-      setIncomeCategories([...incomeCategories, cat])
-      setNewIncomeCategory("")
-    }
-  }
-
-  // 刪除分類
-  const removeCategory = (type: "expense" | "income", category: string) => {
-    if (type === "expense") {
-      setExpenseCategories(expenseCategories.filter((c) => c !== category))
-    } else {
-      setIncomeCategories(incomeCategories.filter((c) => c !== category))
-    }
   }
 
   if (loading) {
@@ -426,20 +381,49 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* 收支分類管理 */}
+      {/* 收支設定 */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Tag className="w-5 h-5" />
-            收支分類
+            <Wallet className="w-5 h-5" />
+            收支設定
           </CardTitle>
-          <CardDescription>管理收入與支出的分類</CardDescription>
+          <CardDescription>管理期初餘額與分類</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button variant="outline" onClick={() => setCategoryDialogOpen(true)}>
-            <Settings className="w-4 h-4 mr-2" />
-            管理分類
-          </Button>
+        <CardContent className="space-y-4">
+          {/* 期初餘額 */}
+          <div className="space-y-2">
+            <Label>期初餘額</Label>
+            <p className="text-xs text-gray-500">設定開始記帳時的初始金額，用於計算累計結餘</p>
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                value={initialBalance}
+                onChange={(e) => setInitialBalance(parseFloat(e.target.value) || 0)}
+                placeholder="0"
+                className="max-w-[200px]"
+              />
+              <Button
+                onClick={handleSaveBalance}
+                disabled={savingBalance}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {savingBalance ? "儲存中..." : "儲存"}
+              </Button>
+            </div>
+          </div>
+
+          {/* 分類管理 */}
+          <div className="pt-2 border-t">
+            <Label className="mb-2 block">收支分類</Label>
+            <Link href="/dashboard/finance/categories">
+              <Button variant="outline">
+                <Tag className="w-4 h-4 mr-2" />
+                管理分類
+              </Button>
+            </Link>
+          </div>
         </CardContent>
       </Card>
 
@@ -547,98 +531,6 @@ export default function SettingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* 分類管理對話框 */}
-      <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>管理收支分類</DialogTitle>
-            <DialogDescription>
-              新增或移除收入與支出的分類
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            {/* 支出分類 */}
-            <div className="space-y-3">
-              <Label className="text-base font-medium">支出分類</Label>
-              <div className="flex flex-wrap gap-2">
-                {expenseCategories.map((cat) => (
-                  <div
-                    key={cat}
-                    className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm"
-                  >
-                    {cat}
-                    {!DEFAULT_EXPENSE_CATEGORIES.includes(cat) && (
-                      <button
-                        onClick={() => removeCategory("expense", cat)}
-                        className="hover:bg-red-200 rounded-full p-0.5"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  value={newExpenseCategory}
-                  onChange={(e) => setNewExpenseCategory(e.target.value)}
-                  placeholder="新增支出分類"
-                  onKeyDown={(e) => e.key === "Enter" && addExpenseCategory()}
-                />
-                <Button variant="outline" size="icon" onClick={addExpenseCategory}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* 收入分類 */}
-            <div className="space-y-3">
-              <Label className="text-base font-medium">收入分類</Label>
-              <div className="flex flex-wrap gap-2">
-                {incomeCategories.map((cat) => (
-                  <div
-                    key={cat}
-                    className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm"
-                  >
-                    {cat}
-                    {!DEFAULT_INCOME_CATEGORIES.includes(cat) && (
-                      <button
-                        onClick={() => removeCategory("income", cat)}
-                        className="hover:bg-green-200 rounded-full p-0.5"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  value={newIncomeCategory}
-                  onChange={(e) => setNewIncomeCategory(e.target.value)}
-                  placeholder="新增收入分類"
-                  onKeyDown={(e) => e.key === "Enter" && addIncomeCategory()}
-                />
-                <Button variant="outline" size="icon" onClick={addIncomeCategory}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            <p className="text-xs text-gray-500">
-              💡 提示：預設分類無法刪除。新增的自訂分類會在你新增收支記錄時自動儲存。
-            </p>
-          </div>
-
-          <DialogFooter>
-            <Button onClick={() => setCategoryDialogOpen(false)}>
-              完成
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
