@@ -115,20 +115,20 @@ export default function FinancePage() {
 
   // 取得所有使用過的分類（用於自訂分類建議）
   const usedCategories = useMemo(() => {
-    const expenseCategories = new Set(EXPENSE_CATEGORIES)
-    const incomeCategories = new Set(INCOME_CATEGORIES)
+    const expenseSet = new Set<string>(EXPENSE_CATEGORIES)
+    const incomeSet = new Set<string>(INCOME_CATEGORIES)
     
     records.forEach((r) => {
       if (r.type === "expense") {
-        expenseCategories.add(r.category)
+        expenseSet.add(r.category)
       } else {
-        incomeCategories.add(r.category)
+        incomeSet.add(r.category)
       }
     })
 
     return {
-      expense: Array.from(expenseCategories),
-      income: Array.from(incomeCategories),
+      expense: Array.from(expenseSet),
+      income: Array.from(incomeSet),
     }
   }, [records])
 

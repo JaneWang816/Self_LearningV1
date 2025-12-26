@@ -162,7 +162,7 @@ export default function SettingsPage() {
         setProfile(profileData)
         setNickname(profileData.nickname || "")
         setAvatarUrl(profileData.avatar_url || "")
-        setEnabledModules(profileData.enabled_modules || ["journal", "habits", "tasks", "schedule"])
+        setEnabledModules((profileData.enabled_modules as ModuleType[]) || ["journal", "habits", "tasks", "schedule"])
       }
 
       // 載入自訂分類（從 finance_records 取得已使用的分類）
