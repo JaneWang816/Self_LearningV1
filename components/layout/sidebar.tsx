@@ -26,6 +26,7 @@ import {
   FileQuestion,
   XCircle,
   Lightbulb,
+  Download,
 } from "lucide-react"
 
 // 導航項目定義
@@ -102,6 +103,11 @@ const navItems: NavItem[] = [
     href: "/dashboard/finance",
     icon: Wallet,
     module: "finance",
+  },
+  {
+    title: "資料匯出",
+    href: "/dashboard/export",
+    icon: Download,
   },
   {
     title: "設定",
