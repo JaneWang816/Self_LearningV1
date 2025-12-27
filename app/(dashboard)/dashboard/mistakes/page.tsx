@@ -1,550 +1,209 @@
-// app/(dashboard)/dashboard/page.tsx
+// app/(dashboard)/dashboard/mistakes/page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
-import { format } from "date-fns"
-import { zhTW } from "date-fns/locale"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabaseClient"
-import { CalendarView, type ModuleType } from "@/components/calendar/calendar-view"
-import { useDashboardData, type JournalTravel } from "@/lib/hooks/use-dashboard-data"
-import { ModuleButtonGrid, getModuleConfig } from "@/components/dashboard/module-buttons"
-import { BookOpen, FileQuestion, AlertCircle, Layers } from "lucide-react"
-
-// Panels
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import {
-  SchedulePanel,
-  TaskPanel,
-  HabitPanel,
-  JournalLifePanel,
-  JournalLearningPanel,
-  JournalReadingPanel,
-  JournalGratitudePanel,
-  JournalTravelPanel,
-  FinancePanel,
-  ExercisePanel,
-  HealthPanel,
-  DailyPlanPanel,
-} from "@/components/dashboard/panels"
-
-// Dialogs
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
-  TaskDialog,
-  JournalLifeDialog,
-  JournalLearningDialog,
-  JournalReadingDialog,
-  JournalGratitudeDialog,
-  JournalTravelDialog,
-  FinanceDialog,
-  ExerciseDialog,
-  HealthDialog,
-} from "@/components/dashboard/dialogs"
+  BookX,
+  Play,
+  CheckCircle,
+  HelpCircle,
+  ListChecks,
+  PenLine,
+  MessageSquare,
+  TrendingUp,
+  Award,
+  Target,
+} from "lucide-react"
+import type { Subject, Question, QuestionType } from "@/types/custom"
 
-import type {
-  Task,
-  FinanceRecord,
-  HealthExercise,
-  HealthMetric,
-} from "@/types/custom"
+// 題型圖示對應
+const typeIcons: Record<string, React.ElementType> = {
+  true_false: CheckCircle,
+  single_choice: HelpCircle,
+  multiple_choice: ListChecks,
+  fill_in_blank: PenLine,
+  essay: MessageSquare,
+}
 
-type DeletableTable = 
-  | "tasks" 
-  | "finance_records" 
-  | "health_exercises" 
-  | "health_metrics"
-  | "journals_life"
-  | "journals_learning"
-  | "journals_reading"
-  | "journals_gratitude"
-  | "journals_travel"
+// 題型顏色對應
+const typeColors: Record<string, string> = {
+  true_false: "text-green-600 bg-green-100",
+  single_choice: "text-blue-600 bg-blue-100",
+  multiple_choice: "text-purple-600 bg-purple-100",
+  fill_in_blank: "text-amber-600 bg-amber-100",
+  essay: "text-pink-600 bg-pink-100",
+}
 
-export default function DashboardPage() {
+export default function MistakesPage() {
   const router = useRouter()
-  const [selectedDate, setSelectedDate] = useState(new Date())
-  const [calendarView, setCalendarView] = useState<"month" | "week">("month")
-  const [expandedModule, setExpandedModule] = useState<string | null>(null)
+  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [questionTypes, setQuestionTypes] = useState<QuestionType[]>([])
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // 使用自定義 Hook 獲取資料
-  const {
-    loading,
-    moduleLoading,
-    indicators,
-    selectedDateKey,
-    scheduleSlots,
-    tasks,
-    habits,
-    journalLife,
-    journalLearning,
-    journalReading,
-    journalGratitude,
-    journalTravels,
-    financeRecords,
-    exercises,
-    healthMetrics,
-    setJournalLife,
-    setJournalLearning,
-    setJournalReading,
-    setJournalGratitude,
-    fetchIndicators,
-    loadModuleData,
-    fetchTasks,
-    fetchHabits,
-    fetchJournalLife,
-    fetchJournalLearning,
-    fetchJournalReading,
-    fetchJournalGratitude,
-    fetchJournalTravel,
-    fetchFinance,
-    fetchExercises,
-    fetchHealthMetrics,
-  } = useDashboardData(selectedDate)
+  // 篩選條件
+  const [filterSubject, setFilterSubject] = useState<string>("all")
+  const [filterType, setFilterType] = useState<string>("all")
+  const [sortBy, setSortBy] = useState<string>("wrong_count")
 
-  // 對話框狀態
-  const [dialogType, setDialogType] = useState<string | null>(null)
-  const [formData, setFormData] = useState<Record<string, any>>({})
-  const [saving, setSaving] = useState(false)
-  const [photoUrls, setPhotoUrls] = useState<string[]>([])
+  // 統計資料
+  const [stats, setStats] = useState({
+    total: 0,
+    mastered: 0,
+    inProgress: 0,
+  })
 
-  const dateLabel = format(selectedDate, "M月d日", { locale: zhTW })
-  const selectedIndicators = indicators[selectedDateKey] || []
-
-  // 載入模組資料
-  useEffect(() => {
-    if (expandedModule) {
-      loadModuleData(expandedModule)
-    }
-  }, [selectedDate, expandedModule, loadModuleData])
-
-  // ============================================
-  // 操作函數
-  // ============================================
-  const handleModuleClick = (moduleKey: string) => {
-    setExpandedModule(expandedModule === moduleKey ? null : moduleKey)
-  }
-
-  const toggleTaskComplete = async (task: Task) => {
-    const newCompletedAt = task.completed_at ? null : new Date().toISOString()
-    await supabase.from("tasks").update({ completed_at: newCompletedAt }).eq("id", task.id)
-    fetchTasks()
-    fetchIndicators()
-  }
-
-  const toggleHabitLog = async (habit: any) => {
+  // 載入資料
+  const fetchData = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    if (habit.log) {
-      await supabase.from("habit_logs").delete().eq("id", habit.log.id)
+    // 取得科目
+    const { data: subjectsData } = await supabase
+      .from("subjects")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("title")
+
+    if (subjectsData) setSubjects(subjectsData)
+
+    // 取得題型
+    const { data: typesData } = await supabase
+      .from("question_types")
+      .select("*")
+
+    if (typesData) setQuestionTypes(typesData)
+
+    // 取得統計
+    await fetchStats(user.id)
+
+    // 取得錯題
+    await fetchQuestions(user.id)
+
+    setLoading(false)
+  }
+
+  const fetchStats = async (userId: string) => {
+    // 總共做過的題目
+    const { count: totalCount } = await supabase
+      .from("questions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gt("attempt_count", 0)
+
+    // 已熟練（連續答對 >= 3）
+    const { count: masteredCount } = await supabase
+      .from("questions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("consecutive_correct", 3)
+
+    // 練習中
+    const { count: inProgressCount } = await supabase
+      .from("questions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gt("attempt_count", 0)
+      .lt("consecutive_correct", 3)
+
+    setStats({
+      total: totalCount || 0,
+      mastered: masteredCount || 0,
+      inProgress: inProgressCount || 0,
+    })
+  }
+
+  const fetchQuestions = async (userId?: string) => {
+    if (!userId) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      userId = user.id
+    }
+
+    // 錯題條件：做過的 AND 連續答對 < 3
+    let query = supabase
+      .from("questions")
+      .select("*")
+      .eq("user_id", userId)
+      .gt("attempt_count", 0)
+      .lt("consecutive_correct", 3)
+      .is("parent_id", null)
+
+    if (filterSubject !== "all") {
+      query = query.eq("subject_id", filterSubject)
+    }
+
+    if (filterType !== "all") {
+      query = query.eq("question_type_id", filterType)
+    }
+
+    // 排序
+    if (sortBy === "wrong_count") {
+      query = query.order("wrong_count", { ascending: false })
+    } else if (sortBy === "recent") {
+      query = query.order("last_attempted_at", { ascending: false })
+    } else if (sortBy === "oldest") {
+      query = query.order("last_attempted_at", { ascending: true })
+    }
+
+    const { data } = await query
+
+    if (data) setQuestions(data)
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  useEffect(() => {
+    fetchQuestions()
+  }, [filterSubject, filterType, sortBy])
+
+  // 開始練習（隨機或順序）
+  const startPractice = (random: boolean = false) => {
+    if (questions.length === 0) return
+
+    let targetQuestion: Question
+    if (random) {
+      const randomIndex = Math.floor(Math.random() * questions.length)
+      targetQuestion = questions[randomIndex]
     } else {
-      await supabase.from("habit_logs").insert({
-        habit_id: habit.id,
-        user_id: user.id,
-        date: selectedDateKey,
-        completed: true,
-      })
+      targetQuestion = questions[0]
     }
-    fetchHabits()
-    fetchIndicators()
+
+    router.push(`/dashboard/practice/${targetQuestion.id}`)
   }
 
-  const openDialog = (type: string, data?: Record<string, any>) => {
-    setDialogType(type)
-    setFormData(data || {})
-    if (type === "journal_travel") {
-      setPhotoUrls(data?.photos || [])
-    }
+  // 取得題型資訊
+  const getQuestionType = (typeId: string) => {
+    return questionTypes.find((t) => t.id === typeId)
   }
 
-  const closeDialog = () => {
-    setDialogType(null)
-    setFormData({})
-    setPhotoUrls([])
+  // 取得科目資訊
+  const getSubject = (subjectId: string) => {
+    return subjects.find((s) => s.id === subjectId)
   }
 
-  // ============================================
-  // 儲存表單
-  // ============================================
-  const handleSave = async () => {
-    setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      setSaving(false)
-      return
-    }
-
-    try {
-      switch (dialogType) {
-        case "task":
-          if (formData.id) {
-            await supabase.from("tasks").update({
-              title: formData.title,
-              description: formData.description,
-              is_important: formData.is_important || false,
-              is_urgent: formData.is_urgent || false,
-            }).eq("id", formData.id)
-          } else {
-            await supabase.from("tasks").insert({
-              user_id: user.id,
-              title: formData.title,
-              description: formData.description,
-              is_important: formData.is_important || false,
-              is_urgent: formData.is_urgent || false,
-              due_date: selectedDateKey,
-            })
-          }
-          fetchTasks()
-          break
-
-        case "journal_life":
-          if (journalLife) {
-            await supabase.from("journals_life").update({
-              title: formData.title,
-              content: formData.content,
-              mood: formData.mood,
-            }).eq("id", journalLife.id)
-          } else {
-            await supabase.from("journals_life").insert({
-              user_id: user.id,
-              title: formData.title,
-              content: formData.content,
-              mood: formData.mood,
-              date: selectedDateKey,
-            })
-          }
-          fetchJournalLife()
-          break
-
-        case "journal_learning":
-          if (journalLearning) {
-            await supabase.from("journals_learning").update({
-              title: formData.title,
-              content: formData.content,
-              duration_minutes: formData.duration_minutes,
-              difficulty: formData.difficulty,
-            }).eq("id", journalLearning.id)
-          } else {
-            await supabase.from("journals_learning").insert({
-              user_id: user.id,
-              title: formData.title,
-              content: formData.content,
-              duration_minutes: formData.duration_minutes,
-              difficulty: formData.difficulty,
-              date: selectedDateKey,
-            })
-          }
-          fetchJournalLearning()
-          break
-
-        case "journal_reading":
-          if (journalReading) {
-            await supabase.from("journals_reading").update({
-              book_title: formData.book_title,
-              author: formData.author,
-              content: formData.content,
-              pages_read: formData.pages_read,
-              current_page: formData.current_page,
-              total_pages: formData.total_pages,
-              rating: formData.rating,
-              is_finished: formData.is_finished,
-            }).eq("id", journalReading.id)
-          } else {
-            await supabase.from("journals_reading").insert({
-              user_id: user.id,
-              book_title: formData.book_title,
-              author: formData.author,
-              content: formData.content,
-              pages_read: formData.pages_read,
-              current_page: formData.current_page,
-              total_pages: formData.total_pages,
-              rating: formData.rating,
-              is_finished: formData.is_finished || false,
-              date: selectedDateKey,
-            })
-          }
-          fetchJournalReading()
-          break
-
-        case "journal_gratitude":
-          if (journalGratitude) {
-            await supabase.from("journals_gratitude").update({
-              content: formData.content,
-            }).eq("id", journalGratitude.id)
-          } else {
-            await supabase.from("journals_gratitude").insert({
-              user_id: user.id,
-              content: formData.content,
-              date: selectedDateKey,
-            })
-          }
-          fetchJournalGratitude()
-          break
-
-        case "journal_travel":
-          if (formData.id) {
-            await supabase.from("journals_travel").update({
-              title: formData.title,
-              location: formData.location,
-              duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
-              content: formData.content,
-              mood: formData.mood,
-              weather: formData.weather,
-              companions: formData.companions,
-              rating: formData.rating,
-              photos: photoUrls,
-            }).eq("id", formData.id)
-          } else {
-            await supabase.from("journals_travel").insert({
-              user_id: user.id,
-              date: selectedDateKey,
-              title: formData.title,
-              location: formData.location,
-              duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
-              content: formData.content,
-              mood: formData.mood,
-              weather: formData.weather,
-              companions: formData.companions,
-              rating: formData.rating,
-              photos: photoUrls,
-            })
-          }
-          fetchJournalTravel()
-          break
-
-        case "finance":
-          if (formData.id) {
-            await supabase.from("finance_records").update({
-              type: formData.type,
-              category: formData.category,
-              amount: parseFloat(formData.amount),
-              description: formData.description,
-            }).eq("id", formData.id)
-          } else {
-            await supabase.from("finance_records").insert({
-              user_id: user.id,
-              type: formData.type,
-              category: formData.category,
-              amount: parseFloat(formData.amount),
-              description: formData.description,
-              date: selectedDateKey,
-            })
-          }
-          fetchFinance()
-          break
-
-        case "exercise":
-          if (formData.id) {
-            await supabase.from("health_exercises").update({
-              exercise_type: formData.exercise_type,
-              duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
-              calories: formData.calories ? parseInt(formData.calories) : null,
-              note: formData.note,
-            }).eq("id", formData.id)
-          } else {
-            await supabase.from("health_exercises").insert({
-              user_id: user.id,
-              exercise_type: formData.exercise_type,
-              duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
-              calories: formData.calories ? parseInt(formData.calories) : null,
-              note: formData.note,
-              date: selectedDateKey,
-            })
-          }
-          fetchExercises()
-          break
-
-        case "health":
-          if (formData.id) {
-            await supabase.from("health_metrics").update({
-              metric_type: formData.metric_type,
-              value_primary: parseFloat(formData.value_primary),
-              value_secondary: formData.value_secondary ? parseFloat(formData.value_secondary) : null,
-              note: formData.note,
-            }).eq("id", formData.id)
-          } else {
-            await supabase.from("health_metrics").insert({
-              user_id: user.id,
-              metric_type: formData.metric_type,
-              value_primary: parseFloat(formData.value_primary),
-              value_secondary: formData.value_secondary ? parseFloat(formData.value_secondary) : null,
-              note: formData.note,
-              date: selectedDateKey,
-            })
-          }
-          fetchHealthMetrics()
-          break
-      }
-      fetchIndicators()
-    } catch (error) {
-      console.error("儲存失敗:", error)
-    }
-
-    setSaving(false)
-    closeDialog()
+  // 計算正確率（加入 null 檢查）
+  const getAccuracy = (question: Question) => {
+    const attemptCount = question.attempt_count ?? 0
+    const wrongCount = question.wrong_count ?? 0
+    if (attemptCount === 0) return 0
+    const correctCount = attemptCount - wrongCount
+    return Math.round((correctCount / attemptCount) * 100)
   }
 
-  // ============================================
-  // 刪除記錄
-  // ============================================
-  const handleDelete = async (table: DeletableTable, id: string, photos?: string[]) => {
-    // 如果有照片，先刪除照片
-    if (photos && photos.length > 0) {
-      const paths = photos.map(url => url.split("/travel-photos/")[1]).filter(Boolean)
-      if (paths.length > 0) {
-        await supabase.storage.from("travel-photos").remove(paths)
-      }
-    }
-
-    await supabase.from(table).delete().eq("id", id)
-    
-    switch (table) {
-      case "tasks": fetchTasks(); break
-      case "finance_records": fetchFinance(); break
-      case "health_exercises": fetchExercises(); break
-      case "health_metrics": fetchHealthMetrics(); break
-      case "journals_life": setJournalLife(null); break
-      case "journals_learning": setJournalLearning(null); break
-      case "journals_reading": setJournalReading(null); break
-      case "journals_gratitude": setJournalGratitude(null); break
-      case "journals_travel": fetchJournalTravel(); break
-    }
-    fetchIndicators()
-  }
-
-  // ============================================
-  // 渲染面板
-  // ============================================
-  const renderPanel = () => {
-    if (!expandedModule) return null
-
-    const config = getModuleConfig(expandedModule)
-    if (!config) return null
-
-    switch (expandedModule) {
-      case "schedule":
-        return <SchedulePanel slots={scheduleSlots} loading={moduleLoading} panelColor={config.panelColor} />
-      
-      case "tasks":
-        return (
-          <TaskPanel
-            tasks={tasks}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onAdd={() => openDialog("task")}
-            onEdit={(task) => openDialog("task", task)}
-            onDelete={(id) => handleDelete("tasks", id)}
-            onToggleComplete={toggleTaskComplete}
-          />
-        )
-      
-      case "habits":
-        return (
-          <HabitPanel
-            habits={habits}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onToggle={toggleHabitLog}
-          />
-        )
-
-      case "daily_plan":
-        return <DailyPlanPanel loading={moduleLoading} panelColor={config.panelColor} />
-      
-      case "journal_life":
-        return (
-          <JournalLifePanel
-            journal={journalLife}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onEdit={() => openDialog("journal_life", journalLife || {})}
-          />
-        )
-      
-      case "journal_learning":
-        return (
-          <JournalLearningPanel
-            journal={journalLearning}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onEdit={() => openDialog("journal_learning", journalLearning || {})}
-          />
-        )
-      
-      case "journal_reading":
-        return (
-          <JournalReadingPanel
-            journal={journalReading}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onEdit={() => openDialog("journal_reading", journalReading || {})}
-          />
-        )
-      
-      case "journal_gratitude":
-        return (
-          <JournalGratitudePanel
-            journal={journalGratitude}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onEdit={() => openDialog("journal_gratitude", journalGratitude || {})}
-          />
-        )
-      
-      case "journal_travel":
-        return (
-          <JournalTravelPanel
-            travels={journalTravels}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onAdd={() => openDialog("journal_travel")}
-            onEdit={(travel) => openDialog("journal_travel", travel)}
-            onDelete={(id, photos) => handleDelete("journals_travel", id, photos)}
-          />
-        )
-      
-      case "finance":
-        return (
-          <FinancePanel
-            records={financeRecords}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onAdd={() => openDialog("finance", { type: "expense" })}
-            onEdit={(record) => openDialog("finance", record)}
-            onDelete={(id) => handleDelete("finance_records", id)}
-          />
-        )
-      
-      case "exercise":
-        return (
-          <ExercisePanel
-            exercises={exercises}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onAdd={() => openDialog("exercise")}
-            onEdit={(ex) => openDialog("exercise", ex)}
-            onDelete={(id) => handleDelete("health_exercises", id)}
-          />
-        )
-      
-      case "health":
-        return (
-          <HealthPanel
-            metrics={healthMetrics}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onAdd={() => openDialog("health", { metric_type: "weight" })}
-            onEdit={(metric) => openDialog("health", metric)}
-            onDelete={(id) => handleDelete("health_metrics", id)}
-          />
-        )
-
-      default:
-        return null
-    }
-  }
-
-  // ============================================
-  // Loading
-  // ============================================
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -553,190 +212,258 @@ export default function DashboardPage() {
     )
   }
 
-  // ============================================
-  // 主渲染
-  // ============================================
   return (
     <div className="space-y-6">
-      {/* 日曆 */}
-      <CalendarView
-        selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
-        indicators={indicators}
-        view={calendarView}
-        onViewChange={setCalendarView}
-      />
-
-      {/* 選定日期詳情 */}
-      <div className="bg-white rounded-lg shadow-sm border p-4">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          📆 {format(selectedDate, "M月d日 EEEE", { locale: zhTW })}
-        </h3>
-
-        {/* 模組按鈕網格 */}
-        <ModuleButtonGrid
-          expandedModule={expandedModule}
-          selectedIndicators={selectedIndicators}
-          onModuleClick={handleModuleClick}
-        />
-
-        {/* 展開面板 */}
-        {renderPanel()}
-
-        {/* 提示文字 */}
-        {!expandedModule && (
-          <p className="text-sm text-gray-500 mt-4 text-center">
-            點擊上方按鈕查看或編輯該日的記錄
-          </p>
+      {/* 頁面標題 */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">錯題本</h1>
+          <p className="text-gray-600 mt-1">複習做過但還沒熟練的題目</p>
+        </div>
+        {questions.length > 0 && (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => startPractice(true)}>
+              🎲 隨機練習
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => startPractice(false)}
+            >
+              <Play className="w-4 h-4 mr-2" />
+              開始練習
+            </Button>
+          </div>
         )}
       </div>
 
-      {/* 學習平台快速入口 */}
-      <div className="bg-white rounded-lg shadow-sm border p-4">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">📚 學習平台</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <button 
-            onClick={() => router.push("/dashboard/subjects")} 
-            className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 transition-all"
-          >
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-500">
-              <BookOpen className="w-6 h-6 text-white" />
+      {/* 統計卡片 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Target className="w-6 h-6 text-blue-600" />
             </div>
-            <span className="text-sm font-medium text-gray-700 mt-2">重點整理</span>
-          </button>
-          <button 
-            onClick={() => router.push("/dashboard/practice")} 
-            className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-green-200 bg-green-50 hover:bg-green-100 hover:border-green-300 transition-all"
-          >
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-500">
-              <FileQuestion className="w-6 h-6 text-white" />
+            <div>
+              <p className="text-sm text-gray-500">已練習題目</p>
+              <p className="text-2xl font-bold">{stats.total}</p>
             </div>
-            <span className="text-sm font-medium text-gray-700 mt-2">題庫練習</span>
-          </button>
-          <button 
-            onClick={() => router.push("/dashboard/mistakes")} 
-            className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-amber-200 bg-amber-50 hover:bg-amber-100 hover:border-amber-300 transition-all"
-          >
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-amber-500">
-              <AlertCircle className="w-6 h-6 text-white" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-amber-600" />
             </div>
-            <span className="text-sm font-medium text-gray-700 mt-2">錯題本</span>
-          </button>
-          <button 
-            onClick={() => router.push("/dashboard/flashcards")} 
-            className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 hover:border-purple-300 transition-all"
-          >
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-purple-500">
-              <Layers className="w-6 h-6 text-white" />
+            <div>
+              <p className="text-sm text-gray-500">練習中</p>
+              <p className="text-2xl font-bold">{stats.inProgress}</p>
             </div>
-            <span className="text-sm font-medium text-gray-700 mt-2">記憶卡片</span>
-          </button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <Award className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">已熟練</p>
+              <p className="text-2xl font-bold">{stats.mastered}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 篩選列 */}
+      <div className="flex flex-wrap gap-4">
+        <div className="w-48">
+          <Select value={filterSubject} onValueChange={setFilterSubject}>
+            <SelectTrigger>
+              <SelectValue placeholder="選擇科目" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">所有科目</SelectItem>
+              {subjects.map((subject) => (
+                <SelectItem key={subject.id} value={subject.id}>
+                  {subject.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-48">
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger>
+              <SelectValue placeholder="選擇題型" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">所有題型</SelectItem>
+              {questionTypes.map((type) => (
+                <SelectItem key={type.id} value={type.id}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-48">
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger>
+              <SelectValue placeholder="排序方式" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="wrong_count">錯誤次數最多</SelectItem>
+              <SelectItem value="recent">最近作答</SelectItem>
+              <SelectItem value="oldest">最久未練習</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* ============================================ */}
-      {/* 對話框 */}
-      {/* ============================================ */}
-      <TaskDialog
-        open={dialogType === "task"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!formData.id}
-      />
-
-      <JournalLifeDialog
-        open={dialogType === "journal_life"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!journalLife}
-      />
-
-      <JournalLearningDialog
-        open={dialogType === "journal_learning"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!journalLearning}
-      />
-
-      <JournalReadingDialog
-        open={dialogType === "journal_reading"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!journalReading}
-      />
-
-      <JournalGratitudeDialog
-        open={dialogType === "journal_gratitude"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!journalGratitude}
-      />
-
-      <JournalTravelDialog
-        open={dialogType === "journal_travel"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        photos={photoUrls}
-        setPhotos={setPhotoUrls}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!formData.id}
-      />
-
-      <FinanceDialog
-        open={dialogType === "finance"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!formData.id}
-      />
-
-      <ExerciseDialog
-        open={dialogType === "exercise"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!formData.id}
-      />
-
-      <HealthDialog
-        open={dialogType === "health"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!formData.id}
-      />
+      {/* 題目列表 */}
+      {questions.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+              <Award className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              太棒了！沒有待複習的題目
+            </h3>
+            <p className="text-gray-600 text-center">
+              {stats.total === 0
+                ? "還沒有開始練習，去題庫開始吧！"
+                : "所有題目都已經熟練了，繼續保持！"}
+            </p>
+            {stats.total === 0 && (
+              <Button
+                className="mt-4 bg-blue-600 hover:bg-blue-700"
+                onClick={() => router.push("/dashboard/practice")}
+              >
+                前往題庫
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {questions.map((question) => (
+            <MistakeCard
+              key={question.id}
+              question={question}
+              questionType={getQuestionType(question.question_type_id)}
+              subject={getSubject(question.subject_id)}
+              accuracy={getAccuracy(question)}
+              onPractice={() => router.push(`/dashboard/practice/${question.id}`)}
+            />
+          ))}
+        </div>
+      )}
     </div>
+  )
+}
+
+// 錯題卡片元件
+function MistakeCard({
+  question,
+  questionType,
+  subject,
+  accuracy,
+  onPractice,
+}: {
+  question: Question
+  questionType?: QuestionType
+  subject?: Subject
+  accuracy: number
+  onPractice: () => void
+}) {
+  const Icon = questionType
+    ? typeIcons[questionType.name] || HelpCircle
+    : HelpCircle
+  const colorClass = questionType
+    ? typeColors[questionType.name] || "text-gray-600 bg-gray-100"
+    : "text-gray-600 bg-gray-100"
+  const consecutiveCorrect = (question as any).consecutive_correct || 0
+
+  // 使用 nullish coalescing 處理可能為 null 的值
+  const attemptCount = question.attempt_count ?? 0
+  const wrongCount = question.wrong_count ?? 0
+
+  // 進度條顏色
+  const getProgressColor = () => {
+    if (consecutiveCorrect >= 2) return "bg-green-500"
+    if (consecutiveCorrect >= 1) return "bg-amber-500"
+    return "bg-red-500"
+  }
+
+  return (
+    <Card className="group hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex items-start gap-4">
+          {/* 題型圖示 */}
+          <div
+            className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${colorClass}`}
+          >
+            <Icon className="w-5 h-5" />
+          </div>
+
+          {/* 題目內容 */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">
+                {subject?.title || "未分類"}
+              </span>
+              <span className="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">
+                {questionType?.label || "未知題型"}
+              </span>
+              {question.marked_for_review && (
+                <span className="text-xs px-2 py-0.5 bg-amber-100 rounded text-amber-600">
+                  ⭐ 已標記
+                </span>
+              )}
+            </div>
+            <p className="text-gray-800 line-clamp-2 mb-2">{question.content}</p>
+
+            {/* 統計資訊 */}
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              <span>
+                作答 {attemptCount} 次
+              </span>
+              <span>
+                答錯 {wrongCount} 次
+              </span>
+              <span>
+                正確率 {accuracy}%
+              </span>
+            </div>
+
+            {/* 熟練度進度條 */}
+            <div className="mt-2">
+              <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                <span>熟練度</span>
+                <span>{consecutiveCorrect} / 3</span>
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all ${getProgressColor()}`}
+                  style={{ width: `${(consecutiveCorrect / 3) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 練習按鈕 */}
+          <Button
+            size="sm"
+            className="shrink-0 bg-green-600 hover:bg-green-700"
+            onClick={onPractice}
+          >
+            <Play className="w-4 h-4 mr-1" />
+            練習
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
