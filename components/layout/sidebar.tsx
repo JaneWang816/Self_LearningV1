@@ -16,6 +16,8 @@ import {
   CheckSquare,
   ListTodo,
   Calendar,
+  CalendarClock,
+  Compass,
   Dumbbell,
   Wallet,
   GraduationCap,
@@ -24,7 +26,6 @@ import {
   FileQuestion,
   XCircle,
   Lightbulb,
-  CalendarDays,
 } from "lucide-react"
 
 // 導航項目定義
@@ -43,6 +44,29 @@ const navItems: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
+    title: "每日行程",
+    href: "/dashboard/plans",
+    icon: CalendarClock,
+  },
+  {
+    title: "課表",
+    href: "/dashboard/schedule",
+    icon: Calendar,
+    module: "schedule",
+  },
+  {
+    title: "任務",
+    href: "/dashboard/tasks",
+    icon: ListTodo,
+    module: "tasks",
+  },
+  {
+    title: "習慣打卡",
+    href: "/dashboard/habits",
+    icon: CheckSquare,
+    module: "habits",
+  },
+  {
     title: "日誌",
     href: "/dashboard/journal",
     icon: BookOpen,
@@ -52,25 +76,8 @@ const navItems: NavItem[] = [
       { title: "學習日誌", href: "/dashboard/journal/learning", icon: BookMarked },
       { title: "閱讀日誌", href: "/dashboard/journal/reading", icon: BookOpen },
       { title: "感恩日誌", href: "/dashboard/journal/gratitude", icon: Heart },
+      { title: "遊覽日誌", href: "/dashboard/journal/travel", icon: Compass },
     ],
-  },
-  {
-    title: "習慣打卡",
-    href: "/dashboard/habits",
-    icon: CheckSquare,
-    module: "habits",
-  },
-  {
-    title: "任務",
-    href: "/dashboard/tasks",
-    icon: ListTodo,
-    module: "tasks",
-  },
-  {
-    title: "課表",
-    href: "/dashboard/schedule",
-    icon: Calendar,
-    module: "schedule",
   },
   {
     title: "學習系統",
@@ -172,9 +179,8 @@ export function Sidebar() {
     <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-white border-r">
       {/* Logo */}
       <div className="flex items-center h-16 px-6 border-b">
-        <CalendarDays className="w-8 h-8 text-blue-600" />
-        <span className="ml-3 text-xl font-bold text-gray-800">日歷</span>
-        <span className="ml-1 text-sm text-blue-600 font-medium">Dayli</span>
+        <BookOpen className="w-8 h-8 text-blue-600" />
+        <span className="ml-3 text-xl font-bold text-gray-800">學習平台</span>
       </div>
 
       {/* Navigation */}

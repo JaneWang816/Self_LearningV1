@@ -1,193 +1,668 @@
-// app/(dashboard)/dashboard/journal/page.tsx
+// app/(dashboard)/dashboard/page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
+import { format, addDays, addWeeks, addMonths, addYears, isBefore, parseISO } from "date-fns"
+import { zhTW } from "date-fns/locale"
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabaseClient"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CalendarView, type ModuleType } from "@/components/calendar/calendar-view"
+import { useDashboardData, type JournalTravel, type DailyPlan } from "@/lib/hooks/use-dashboard-data"
+import { ModuleButtonGrid, getModuleConfig } from "@/components/dashboard/module-buttons"
+import { BookOpen, FileQuestion, AlertCircle, Layers } from "lucide-react"
+
+// Panels
 import {
-  BookOpen,
-  FileText,
-  BookMarked,
-  Heart,
-  ChevronRight,
-  Calendar,
-  PenLine,
-} from "lucide-react"
-import { MOOD_LABELS } from "@/types/custom"
+  SchedulePanel,
+  TaskPanel,
+  HabitPanel,
+  DailyPlanPanel,
+  JournalLifePanel,
+  JournalLearningPanel,
+  JournalReadingPanel,
+  JournalGratitudePanel,
+  JournalTravelPanel,
+  FinancePanel,
+  ExercisePanel,
+  HealthPanel,
+} from "@/components/dashboard/panels"
+
+// Dialogs
+import {
+  TaskDialog,
+  JournalLifeDialog,
+  JournalLearningDialog,
+  JournalReadingDialog,
+  JournalGratitudeDialog,
+  JournalTravelDialog,
+  FinanceDialog,
+  ExerciseDialog,
+  HealthDialog,
+  DailyPlanDialog,
+} from "@/components/dashboard/dialogs"
+
 import type {
-  JournalLife,
-  JournalLearning,
-  JournalReading,
-  JournalGratitude,
+  Task,
+  FinanceRecord,
+  HealthExercise,
+  HealthMetric,
 } from "@/types/custom"
 
-// 日誌類型配置
-const journalTypes = [
-  {
-    key: "life",
-    title: "生活日誌",
-    description: "記錄日常生活點滴",
-    href: "/dashboard/journal/life",
-    icon: FileText,
-    color: "text-blue-600",
-    bgColor: "bg-blue-100",
-  },
-  {
-    key: "learning",
-    title: "學習日誌",
-    description: "追蹤學習進度與心得",
-    href: "/dashboard/journal/learning",
-    icon: BookMarked,
-    color: "text-green-600",
-    bgColor: "bg-green-100",
-  },
-  {
-    key: "reading",
-    title: "閱讀日誌",
-    description: "記錄閱讀書籍與感想",
-    href: "/dashboard/journal/reading",
-    icon: BookOpen,
-    color: "text-purple-600",
-    bgColor: "bg-purple-100",
-  },
-  {
-    key: "gratitude",
-    title: "感恩日誌",
-    description: "感謝生活中的美好",
-    href: "/dashboard/journal/gratitude",
-    icon: Heart,
-    color: "text-pink-600",
-    bgColor: "bg-pink-100",
-  },
-]
+type DeletableTable = 
+  | "tasks" 
+  | "finance_records" 
+  | "health_exercises" 
+  | "health_metrics"
+  | "journals_life"
+  | "journals_learning"
+  | "journals_reading"
+  | "journals_gratitude"
+  | "journals_travel"
+  | "daily_plans"
 
-export default function JournalPage() {
-  const [stats, setStats] = useState({
-    life: { count: 0, latest: null as JournalLife | null },
-    learning: { count: 0, latest: null as JournalLearning | null },
-    reading: { count: 0, latest: null as JournalReading | null },
-    gratitude: { count: 0, latest: null as JournalGratitude | null },
-  })
-  const [loading, setLoading] = useState(true)
+export default function DashboardPage() {
+  const router = useRouter()
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [calendarView, setCalendarView] = useState<"month" | "week">("month")
+  const [expandedModule, setExpandedModule] = useState<string | null>(null)
 
+  // 使用自定義 Hook 獲取資料
+  const {
+    loading,
+    moduleLoading,
+    indicators,
+    selectedDateKey,
+    scheduleSlots,
+    tasks,
+    habits,
+    dailyPlans,
+    journalLife,
+    journalLearning,
+    journalReading,
+    journalGratitude,
+    journalTravels,
+    financeRecords,
+    exercises,
+    healthMetrics,
+    setJournalLife,
+    setJournalLearning,
+    setJournalReading,
+    setJournalGratitude,
+    fetchIndicators,
+    loadModuleData,
+    fetchTasks,
+    fetchHabits,
+    fetchDailyPlans,
+    fetchJournalLife,
+    fetchJournalLearning,
+    fetchJournalReading,
+    fetchJournalGratitude,
+    fetchJournalTravel,
+    fetchFinance,
+    fetchExercises,
+    fetchHealthMetrics,
+  } = useDashboardData(selectedDate)
+
+  // 對話框狀態
+  const [dialogType, setDialogType] = useState<string | null>(null)
+  const [formData, setFormData] = useState<Record<string, any>>({})
+  const [saving, setSaving] = useState(false)
+  const [photoUrls, setPhotoUrls] = useState<string[]>([])
+
+  const dateLabel = format(selectedDate, "M月d日", { locale: zhTW })
+  const selectedIndicators = indicators[selectedDateKey] || []
+
+  // 載入模組資料
   useEffect(() => {
-    const fetchStats = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+    if (expandedModule) {
+      loadModuleData(expandedModule)
+    }
+  }, [selectedDate, expandedModule, loadModuleData])
 
-      // 取得各類日誌統計
-      const [lifeRes, learningRes, readingRes, gratitudeRes] = await Promise.all([
-        supabase
-          .from("journals_life")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("date", { ascending: false })
-          .limit(1),
-        supabase
-          .from("journals_learning")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("date", { ascending: false })
-          .limit(1),
-        supabase
-          .from("journals_reading")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("date", { ascending: false })
-          .limit(1),
-        supabase
-          .from("journals_gratitude")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("date", { ascending: false })
-          .limit(1),
-      ])
+  // ============================================
+  // 操作函數
+  // ============================================
+  const handleModuleClick = (moduleKey: string) => {
+    setExpandedModule(expandedModule === moduleKey ? null : moduleKey)
+  }
 
-      // 取得總數
-      const [lifeCount, learningCount, readingCount, gratitudeCount] = await Promise.all([
-        supabase
-          .from("journals_life")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id),
-        supabase
-          .from("journals_learning")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id),
-        supabase
-          .from("journals_reading")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id),
-        supabase
-          .from("journals_gratitude")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id),
-      ])
+  const toggleTaskComplete = async (task: Task) => {
+    const newCompletedAt = task.completed_at ? null : new Date().toISOString()
+    await supabase.from("tasks").update({ completed_at: newCompletedAt }).eq("id", task.id)
+    fetchTasks()
+    fetchIndicators()
+  }
 
-      setStats({
-        life: {
-          count: lifeCount.count || 0,
-          latest: lifeRes.data?.[0] || null,
-        },
-        learning: {
-          count: learningCount.count || 0,
-          latest: learningRes.data?.[0] || null,
-        },
-        reading: {
-          count: readingCount.count || 0,
-          latest: readingRes.data?.[0] || null,
-        },
-        gratitude: {
-          count: gratitudeCount.count || 0,
-          latest: gratitudeRes.data?.[0] || null,
-        },
+  const toggleHabitLog = async (habit: any) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    if (habit.log) {
+      await supabase.from("habit_logs").delete().eq("id", habit.log.id)
+    } else {
+      await supabase.from("habit_logs").insert({
+        habit_id: habit.id,
+        user_id: user.id,
+        date: selectedDateKey,
+        completed: true,
       })
-
-      setLoading(false)
     }
-
-    fetchStats()
-  }, [])
-
-  // 格式化日期
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString("zh-TW", {
-      month: "short",
-      day: "numeric",
-    })
+    fetchHabits()
+    fetchIndicators()
   }
 
-  // 取得最新日誌預覽
-  const getPreview = (type: string) => {
-    const stat = stats[type as keyof typeof stats]
-    if (!stat.latest) return "尚無紀錄"
+  const openDialog = (type: string, data?: Record<string, any>) => {
+    setDialogType(type)
+    setFormData(data || { color: "blue", recurrence_type: "none" })
+    if (type === "journal_travel") {
+      setPhotoUrls(data?.photos || [])
+    }
+  }
 
-    switch (type) {
-      case "life": {
-        const life = stat.latest as JournalLife
-        const mood = life.mood ? MOOD_LABELS[life.mood] : ""
-        return `${formatDate(life.date)} ${mood}`
+  const closeDialog = () => {
+    setDialogType(null)
+    setFormData({})
+    setPhotoUrls([])
+  }
+
+  // ============================================
+  // 產生重複行程
+  // ============================================
+  const generateRecurringPlans = async (
+    basePlan: Record<string, any>,
+    userId: string,
+    startDate: Date
+  ) => {
+    const recurrenceType = basePlan.recurrence_type
+    if (!recurrenceType || recurrenceType === "none") return
+
+    const endDate = basePlan.recurrence_end_date 
+      ? parseISO(basePlan.recurrence_end_date) 
+      : addYears(startDate, 1) // 預設一年
+
+    const plans: any[] = []
+    let currentDate = startDate
+
+    // 產生下一個日期
+    const getNextDate = (date: Date): Date => {
+      switch (recurrenceType) {
+        case "daily": return addDays(date, 1)
+        case "weekly": return addWeeks(date, 1)
+        case "monthly": return addMonths(date, 1)
+        case "yearly": return addYears(date, 1)
+        default: return date
       }
-      case "learning": {
-        const learning = stat.latest as JournalLearning
-        return `${formatDate(learning.date)} - ${learning.title || "學習紀錄"}`
+    }
+
+    // 產生重複行程（最多 365 筆）
+    let count = 0
+    currentDate = getNextDate(currentDate) // 從下一個週期開始
+    
+    while (isBefore(currentDate, endDate) && count < 365) {
+      plans.push({
+        user_id: userId,
+        date: format(currentDate, "yyyy-MM-dd"),
+        title: basePlan.title,
+        start_time: basePlan.start_time || null,
+        end_time: basePlan.end_time || null,
+        is_all_day: basePlan.is_all_day || false,
+        location: basePlan.location || null,
+        description: basePlan.description || null,
+        color: basePlan.color || "blue",
+        recurrence_type: recurrenceType,
+        recurrence_end_date: basePlan.recurrence_end_date || null,
+        parent_id: basePlan.id, // 指向原始行程
+      })
+      currentDate = getNextDate(currentDate)
+      count++
+    }
+
+    if (plans.length > 0) {
+      await supabase.from("daily_plans").insert(plans)
+    }
+  }
+
+  // ============================================
+  // 儲存表單
+  // ============================================
+  const handleSave = async () => {
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setSaving(false)
+      return
+    }
+
+    try {
+      switch (dialogType) {
+        case "task":
+          if (formData.id) {
+            await supabase.from("tasks").update({
+              title: formData.title,
+              description: formData.description,
+              is_important: formData.is_important || false,
+              is_urgent: formData.is_urgent || false,
+            }).eq("id", formData.id)
+          } else {
+            await supabase.from("tasks").insert({
+              user_id: user.id,
+              title: formData.title,
+              description: formData.description,
+              is_important: formData.is_important || false,
+              is_urgent: formData.is_urgent || false,
+              due_date: selectedDateKey,
+            })
+          }
+          fetchTasks()
+          break
+
+        case "daily_plan":
+          if (formData.id) {
+            // 編輯現有行程
+            await supabase.from("daily_plans").update({
+              title: formData.title,
+              start_time: formData.is_all_day ? null : formData.start_time,
+              end_time: formData.is_all_day ? null : formData.end_time,
+              is_all_day: formData.is_all_day || false,
+              location: formData.location || null,
+              description: formData.description || null,
+              color: formData.color || "blue",
+              recurrence_type: formData.recurrence_type || "none",
+              recurrence_end_date: formData.recurrence_end_date || null,
+            }).eq("id", formData.id)
+          } else {
+            // 新增行程
+            const { data: newPlan, error } = await supabase.from("daily_plans").insert({
+              user_id: user.id,
+              date: selectedDateKey,
+              title: formData.title,
+              start_time: formData.is_all_day ? null : formData.start_time,
+              end_time: formData.is_all_day ? null : formData.end_time,
+              is_all_day: formData.is_all_day || false,
+              location: formData.location || null,
+              description: formData.description || null,
+              color: formData.color || "blue",
+              recurrence_type: formData.recurrence_type || "none",
+              recurrence_end_date: formData.recurrence_end_date || null,
+            }).select().single()
+
+            // 如果有重複，產生後續行程
+            if (!error && newPlan && formData.recurrence_type && formData.recurrence_type !== "none") {
+              await generateRecurringPlans(
+                { ...formData, id: newPlan.id },
+                user.id,
+                selectedDate
+              )
+            }
+          }
+          fetchDailyPlans()
+          break
+
+        case "journal_life":
+          if (journalLife) {
+            await supabase.from("journals_life").update({
+              title: formData.title,
+              content: formData.content,
+              mood: formData.mood,
+            }).eq("id", journalLife.id)
+          } else {
+            await supabase.from("journals_life").insert({
+              user_id: user.id,
+              title: formData.title,
+              content: formData.content,
+              mood: formData.mood,
+              date: selectedDateKey,
+            })
+          }
+          fetchJournalLife()
+          break
+
+        case "journal_learning":
+          if (journalLearning) {
+            await supabase.from("journals_learning").update({
+              title: formData.title,
+              content: formData.content,
+              duration_minutes: formData.duration_minutes,
+              difficulty: formData.difficulty,
+            }).eq("id", journalLearning.id)
+          } else {
+            await supabase.from("journals_learning").insert({
+              user_id: user.id,
+              title: formData.title,
+              content: formData.content,
+              duration_minutes: formData.duration_minutes,
+              difficulty: formData.difficulty,
+              date: selectedDateKey,
+            })
+          }
+          fetchJournalLearning()
+          break
+
+        case "journal_reading":
+          if (journalReading) {
+            await supabase.from("journals_reading").update({
+              book_title: formData.book_title,
+              author: formData.author,
+              content: formData.content,
+              pages_read: formData.pages_read,
+              current_page: formData.current_page,
+              total_pages: formData.total_pages,
+              rating: formData.rating,
+              is_finished: formData.is_finished,
+            }).eq("id", journalReading.id)
+          } else {
+            await supabase.from("journals_reading").insert({
+              user_id: user.id,
+              book_title: formData.book_title,
+              author: formData.author,
+              content: formData.content,
+              pages_read: formData.pages_read,
+              current_page: formData.current_page,
+              total_pages: formData.total_pages,
+              rating: formData.rating,
+              is_finished: formData.is_finished || false,
+              date: selectedDateKey,
+            })
+          }
+          fetchJournalReading()
+          break
+
+        case "journal_gratitude":
+          if (journalGratitude) {
+            await supabase.from("journals_gratitude").update({
+              content: formData.content,
+            }).eq("id", journalGratitude.id)
+          } else {
+            await supabase.from("journals_gratitude").insert({
+              user_id: user.id,
+              content: formData.content,
+              date: selectedDateKey,
+            })
+          }
+          fetchJournalGratitude()
+          break
+
+        case "journal_travel":
+          if (formData.id) {
+            await supabase.from("journals_travel").update({
+              title: formData.title,
+              location: formData.location,
+              duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
+              content: formData.content,
+              mood: formData.mood,
+              weather: formData.weather,
+              companions: formData.companions,
+              rating: formData.rating,
+              photos: photoUrls,
+            }).eq("id", formData.id)
+          } else {
+            await supabase.from("journals_travel").insert({
+              user_id: user.id,
+              date: selectedDateKey,
+              title: formData.title,
+              location: formData.location,
+              duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
+              content: formData.content,
+              mood: formData.mood,
+              weather: formData.weather,
+              companions: formData.companions,
+              rating: formData.rating,
+              photos: photoUrls,
+            })
+          }
+          fetchJournalTravel()
+          break
+
+        case "finance":
+          if (formData.id) {
+            await supabase.from("finance_records").update({
+              type: formData.type,
+              category: formData.category,
+              amount: parseFloat(formData.amount),
+              description: formData.description,
+            }).eq("id", formData.id)
+          } else {
+            await supabase.from("finance_records").insert({
+              user_id: user.id,
+              type: formData.type,
+              category: formData.category,
+              amount: parseFloat(formData.amount),
+              description: formData.description,
+              date: selectedDateKey,
+            })
+          }
+          fetchFinance()
+          break
+
+        case "exercise":
+          if (formData.id) {
+            await supabase.from("health_exercises").update({
+              exercise_type: formData.exercise_type,
+              duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
+              calories: formData.calories ? parseInt(formData.calories) : null,
+              note: formData.note,
+            }).eq("id", formData.id)
+          } else {
+            await supabase.from("health_exercises").insert({
+              user_id: user.id,
+              exercise_type: formData.exercise_type,
+              duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
+              calories: formData.calories ? parseInt(formData.calories) : null,
+              note: formData.note,
+              date: selectedDateKey,
+            })
+          }
+          fetchExercises()
+          break
+
+        case "health":
+          if (formData.id) {
+            await supabase.from("health_metrics").update({
+              metric_type: formData.metric_type,
+              value_primary: parseFloat(formData.value_primary),
+              value_secondary: formData.value_secondary ? parseFloat(formData.value_secondary) : null,
+              note: formData.note,
+            }).eq("id", formData.id)
+          } else {
+            await supabase.from("health_metrics").insert({
+              user_id: user.id,
+              metric_type: formData.metric_type,
+              value_primary: parseFloat(formData.value_primary),
+              value_secondary: formData.value_secondary ? parseFloat(formData.value_secondary) : null,
+              note: formData.note,
+              date: selectedDateKey,
+            })
+          }
+          fetchHealthMetrics()
+          break
       }
-      case "reading": {
-        const reading = stat.latest as JournalReading
-        return `${formatDate(reading.date)} - ${reading.book_title}`
+      fetchIndicators()
+    } catch (error) {
+      console.error("儲存失敗:", error)
+    }
+
+    setSaving(false)
+    closeDialog()
+  }
+
+  // ============================================
+  // 刪除記錄
+  // ============================================
+  const handleDelete = async (table: DeletableTable, id: string, photos?: string[]) => {
+    // 如果有照片，先刪除照片
+    if (photos && photos.length > 0) {
+      const paths = photos.map(url => url.split("/travel-photos/")[1]).filter(Boolean)
+      if (paths.length > 0) {
+        await supabase.storage.from("travel-photos").remove(paths)
       }
-      case "gratitude": {
-        const gratitude = stat.latest as JournalGratitude
-        const preview = gratitude.content.slice(0, 30)
-        return `${formatDate(gratitude.date)} - ${preview}${gratitude.content.length > 30 ? "..." : ""}`
-      }
+    }
+
+    // 如果是行程，也刪除所有子行程
+    if (table === "daily_plans") {
+      await supabase.from("daily_plans").delete().eq("parent_id", id)
+    }
+
+    await supabase.from(table).delete().eq("id", id)
+    
+    switch (table) {
+      case "tasks": fetchTasks(); break
+      case "daily_plans": fetchDailyPlans(); break
+      case "finance_records": fetchFinance(); break
+      case "health_exercises": fetchExercises(); break
+      case "health_metrics": fetchHealthMetrics(); break
+      case "journals_life": setJournalLife(null); break
+      case "journals_learning": setJournalLearning(null); break
+      case "journals_reading": setJournalReading(null); break
+      case "journals_gratitude": setJournalGratitude(null); break
+      case "journals_travel": fetchJournalTravel(); break
+    }
+    fetchIndicators()
+  }
+
+  // ============================================
+  // 渲染面板
+  // ============================================
+  const renderPanel = () => {
+    if (!expandedModule) return null
+
+    const config = getModuleConfig(expandedModule)
+    if (!config) return null
+
+    switch (expandedModule) {
+      case "schedule":
+        return <SchedulePanel slots={scheduleSlots} loading={moduleLoading} panelColor={config.panelColor} />
+      
+      case "tasks":
+        return (
+          <TaskPanel
+            tasks={tasks}
+            loading={moduleLoading}
+            panelColor={config.panelColor}
+            onAdd={() => openDialog("task")}
+            onEdit={(task) => openDialog("task", task)}
+            onDelete={(id) => handleDelete("tasks", id)}
+            onToggleComplete={toggleTaskComplete}
+          />
+        )
+      
+      case "habits":
+        return (
+          <HabitPanel
+            habits={habits}
+            loading={moduleLoading}
+            panelColor={config.panelColor}
+            onToggle={toggleHabitLog}
+          />
+        )
+
+      case "daily_plan":
+        return (
+          <DailyPlanPanel
+            plans={dailyPlans}
+            loading={moduleLoading}
+            panelColor={config.panelColor}
+            onAdd={() => openDialog("daily_plan")}
+            onEdit={(plan) => openDialog("daily_plan", plan)}
+            onDelete={(id) => handleDelete("daily_plans", id)}
+          />
+        )
+      
+      case "journal_life":
+        return (
+          <JournalLifePanel
+            journal={journalLife}
+            loading={moduleLoading}
+            panelColor={config.panelColor}
+            onEdit={() => openDialog("journal_life", journalLife || {})}
+          />
+        )
+      
+      case "journal_learning":
+        return (
+          <JournalLearningPanel
+            journal={journalLearning}
+            loading={moduleLoading}
+            panelColor={config.panelColor}
+            onEdit={() => openDialog("journal_learning", journalLearning || {})}
+          />
+        )
+      
+      case "journal_reading":
+        return (
+          <JournalReadingPanel
+            journal={journalReading}
+            loading={moduleLoading}
+            panelColor={config.panelColor}
+            onEdit={() => openDialog("journal_reading", journalReading || {})}
+          />
+        )
+      
+      case "journal_gratitude":
+        return (
+          <JournalGratitudePanel
+            journal={journalGratitude}
+            loading={moduleLoading}
+            panelColor={config.panelColor}
+            onEdit={() => openDialog("journal_gratitude", journalGratitude || {})}
+          />
+        )
+      
+      case "journal_travel":
+        return (
+          <JournalTravelPanel
+            travels={journalTravels}
+            loading={moduleLoading}
+            panelColor={config.panelColor}
+            onAdd={() => openDialog("journal_travel")}
+            onEdit={(travel) => openDialog("journal_travel", travel)}
+            onDelete={(id, photos) => handleDelete("journals_travel", id, photos)}
+          />
+        )
+      
+      case "finance":
+        return (
+          <FinancePanel
+            records={financeRecords}
+            loading={moduleLoading}
+            panelColor={config.panelColor}
+            onAdd={() => openDialog("finance", { type: "expense" })}
+            onEdit={(record) => openDialog("finance", record)}
+            onDelete={(id) => handleDelete("finance_records", id)}
+          />
+        )
+      
+      case "exercise":
+        return (
+          <ExercisePanel
+            exercises={exercises}
+            loading={moduleLoading}
+            panelColor={config.panelColor}
+            onAdd={() => openDialog("exercise")}
+            onEdit={(ex) => openDialog("exercise", ex)}
+            onDelete={(id) => handleDelete("health_exercises", id)}
+          />
+        )
+      
+      case "health":
+        return (
+          <HealthPanel
+            metrics={healthMetrics}
+            loading={moduleLoading}
+            panelColor={config.panelColor}
+            onAdd={() => openDialog("health", { metric_type: "weight" })}
+            onEdit={(metric) => openDialog("health", metric)}
+            onDelete={(id) => handleDelete("health_metrics", id)}
+          />
+        )
+
       default:
-        return ""
+        return null
     }
   }
 
+  // ============================================
+  // Loading
+  // ============================================
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -196,115 +671,201 @@ export default function JournalPage() {
     )
   }
 
-  const totalCount = stats.life.count + stats.learning.count + stats.reading.count + stats.gratitude.count
-
+  // ============================================
+  // 主渲染
+  // ============================================
   return (
     <div className="space-y-6">
-      {/* 頁面標題 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">日誌</h1>
-          <p className="text-gray-600 mt-1">記錄生活、學習與成長</p>
+      {/* 日曆 */}
+      <CalendarView
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
+        indicators={indicators}
+        view={calendarView}
+        onViewChange={setCalendarView}
+      />
+
+      {/* 選定日期詳情 */}
+      <div className="bg-white rounded-lg shadow-sm border p-4">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          📆 {format(selectedDate, "M月d日 EEEE", { locale: zhTW })}
+        </h3>
+
+        {/* 模組按鈕網格 */}
+        <ModuleButtonGrid
+          expandedModule={expandedModule}
+          selectedIndicators={selectedIndicators}
+          onModuleClick={handleModuleClick}
+        />
+
+        {/* 展開面板 */}
+        {renderPanel()}
+
+        {/* 提示文字 */}
+        {!expandedModule && (
+          <p className="text-sm text-gray-500 mt-4 text-center">
+            點擊上方按鈕查看或編輯該日的記錄
+          </p>
+        )}
+      </div>
+
+      {/* 學習平台快速入口 */}
+      <div className="bg-white rounded-lg shadow-sm border p-4">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">📚 學習平台</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <button 
+            onClick={() => router.push("/dashboard/subjects")} 
+            className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 transition-all"
+          >
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-500">
+              <BookOpen className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-sm font-medium text-gray-700 mt-2">重點整理</span>
+          </button>
+          <button 
+            onClick={() => router.push("/dashboard/practice")} 
+            className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-green-200 bg-green-50 hover:bg-green-100 hover:border-green-300 transition-all"
+          >
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-500">
+              <FileQuestion className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-sm font-medium text-gray-700 mt-2">題庫練習</span>
+          </button>
+          <button 
+            onClick={() => router.push("/dashboard/mistakes")} 
+            className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-amber-200 bg-amber-50 hover:bg-amber-100 hover:border-amber-300 transition-all"
+          >
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-amber-500">
+              <AlertCircle className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-sm font-medium text-gray-700 mt-2">錯題本</span>
+          </button>
+          <button 
+            onClick={() => router.push("/dashboard/flashcards")} 
+            className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 hover:border-purple-300 transition-all"
+          >
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-purple-500">
+              <Layers className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-sm font-medium text-gray-700 mt-2">記憶卡片</span>
+          </button>
         </div>
-        <Link href="/dashboard">
-          <Button variant="outline">
-            <Calendar className="w-4 h-4 mr-2" />
-            日曆視圖
-          </Button>
-        </Link>
       </div>
 
-      {/* 統計卡片 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-3xl font-bold text-gray-800">{totalCount}</p>
-            <p className="text-sm text-gray-500">總日誌數</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-3xl font-bold text-blue-600">{stats.life.count}</p>
-            <p className="text-sm text-gray-500">生活日誌</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-3xl font-bold text-green-600">{stats.learning.count}</p>
-            <p className="text-sm text-gray-500">學習日誌</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-3xl font-bold text-purple-600">{stats.reading.count}</p>
-            <p className="text-sm text-gray-500">閱讀日誌</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* ============================================ */}
+      {/* 對話框 */}
+      {/* ============================================ */}
+      <TaskDialog
+        open={dialogType === "task"}
+        onOpenChange={(open) => !open && closeDialog()}
+        formData={formData}
+        setFormData={setFormData}
+        onSave={handleSave}
+        saving={saving}
+        dateLabel={dateLabel}
+        isEdit={!!formData.id}
+      />
 
-      {/* 日誌類型卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {journalTypes.map((type) => {
-          const Icon = type.icon
-          const stat = stats[type.key as keyof typeof stats]
+      <DailyPlanDialog
+        open={dialogType === "daily_plan"}
+        onOpenChange={(open) => !open && closeDialog()}
+        formData={formData}
+        setFormData={setFormData}
+        onSave={handleSave}
+        saving={saving}
+        dateLabel={dateLabel}
+        isEdit={!!formData.id}
+      />
 
-          return (
-            <Link key={type.key} href={type.href}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-lg ${type.bgColor} flex items-center justify-center shrink-0`}>
-                      <Icon className={`w-6 h-6 ${type.color}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
-                          {type.title}
-                        </h3>
-                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                      </div>
-                      <p className="text-sm text-gray-500 mt-1">{type.description}</p>
-                      <div className="flex items-center justify-between mt-3">
-                        <span className="text-xs text-gray-400">
-                          {stat.count} 篇紀錄
-                        </span>
-                        <span className="text-xs text-gray-500 truncate max-w-[200px]">
-                          {getPreview(type.key)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          )
-        })}
-      </div>
+      <JournalLifeDialog
+        open={dialogType === "journal_life"}
+        onOpenChange={(open) => !open && closeDialog()}
+        formData={formData}
+        setFormData={setFormData}
+        onSave={handleSave}
+        saving={saving}
+        dateLabel={dateLabel}
+        isEdit={!!journalLife}
+      />
 
-      {/* 快速新增 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <PenLine className="w-5 h-5" />
-            快速新增
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            {journalTypes.map((type) => {
-              const Icon = type.icon
-              return (
-                <Link key={type.key} href={`${type.href}?new=true`}>
-                  <Button variant="outline" className="gap-2">
-                    <Icon className={`w-4 h-4 ${type.color}`} />
-                    {type.title}
-                  </Button>
-                </Link>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+      <JournalLearningDialog
+        open={dialogType === "journal_learning"}
+        onOpenChange={(open) => !open && closeDialog()}
+        formData={formData}
+        setFormData={setFormData}
+        onSave={handleSave}
+        saving={saving}
+        dateLabel={dateLabel}
+        isEdit={!!journalLearning}
+      />
+
+      <JournalReadingDialog
+        open={dialogType === "journal_reading"}
+        onOpenChange={(open) => !open && closeDialog()}
+        formData={formData}
+        setFormData={setFormData}
+        onSave={handleSave}
+        saving={saving}
+        dateLabel={dateLabel}
+        isEdit={!!journalReading}
+      />
+
+      <JournalGratitudeDialog
+        open={dialogType === "journal_gratitude"}
+        onOpenChange={(open) => !open && closeDialog()}
+        formData={formData}
+        setFormData={setFormData}
+        onSave={handleSave}
+        saving={saving}
+        dateLabel={dateLabel}
+        isEdit={!!journalGratitude}
+      />
+
+      <JournalTravelDialog
+        open={dialogType === "journal_travel"}
+        onOpenChange={(open) => !open && closeDialog()}
+        formData={formData}
+        setFormData={setFormData}
+        photos={photoUrls}
+        setPhotos={setPhotoUrls}
+        onSave={handleSave}
+        saving={saving}
+        dateLabel={dateLabel}
+        isEdit={!!formData.id}
+      />
+
+      <FinanceDialog
+        open={dialogType === "finance"}
+        onOpenChange={(open) => !open && closeDialog()}
+        formData={formData}
+        setFormData={setFormData}
+        onSave={handleSave}
+        saving={saving}
+        dateLabel={dateLabel}
+        isEdit={!!formData.id}
+      />
+
+      <ExerciseDialog
+        open={dialogType === "exercise"}
+        onOpenChange={(open) => !open && closeDialog()}
+        formData={formData}
+        setFormData={setFormData}
+        onSave={handleSave}
+        saving={saving}
+        dateLabel={dateLabel}
+        isEdit={!!formData.id}
+      />
+
+      <HealthDialog
+        open={dialogType === "health"}
+        onOpenChange={(open) => !open && closeDialog()}
+        formData={formData}
+        setFormData={setFormData}
+        onSave={handleSave}
+        saving={saving}
+        dateLabel={dateLabel}
+        isEdit={!!formData.id}
+      />
     </div>
   )
 }

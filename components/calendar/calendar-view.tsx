@@ -24,10 +24,12 @@ export const MODULE_COLORS = {
   schedule: "bg-blue-500",      // 課表
   tasks: "bg-amber-500",        // 任務
   habits: "bg-cyan-500",        // 習慣打卡
+  daily_plan: "bg-indigo-500",  // 每日行程
   journal_life: "bg-pink-500",  // 生活日誌
   journal_learning: "bg-purple-500", // 學習日誌
   journal_reading: "bg-green-500",   // 閱讀日誌
   journal_gratitude: "bg-yellow-500", // 感恩日誌
+  journal_travel: "bg-sky-500",      // 遊覽日誌
   finance: "bg-emerald-500",    // 收支
   exercise: "bg-orange-500",    // 運動
   health: "bg-red-500",         // 健康
@@ -258,6 +260,10 @@ export function CalendarView({
             <span>習慣</span>
           </div>
           <div className="flex items-center gap-1">
+            <span className={`w-2 h-2 rounded-full ${MODULE_COLORS.daily_plan}`} />
+            <span>行程</span>
+          </div>
+          <div className="flex items-center gap-1">
             <span className={`w-2 h-2 rounded-full ${MODULE_COLORS.journal_life}`} />
             <span>生活</span>
           </div>
@@ -272,6 +278,10 @@ export function CalendarView({
           <div className="flex items-center gap-1">
             <span className={`w-2 h-2 rounded-full ${MODULE_COLORS.journal_gratitude}`} />
             <span>感恩</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className={`w-2 h-2 rounded-full ${MODULE_COLORS.journal_travel}`} />
+            <span>遊覽</span>
           </div>
           <div className="flex items-center gap-1">
             <span className={`w-2 h-2 rounded-full ${MODULE_COLORS.finance}`} />

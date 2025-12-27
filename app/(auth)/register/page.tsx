@@ -113,7 +113,7 @@ export default function RegisterPage() {
           </div>
         </div>
         <CardTitle className="text-2xl">建立帳號</CardTitle>
-        <CardDescription>開始你的自主學習之旅</CardDescription>
+        <CardDescription>開始你的日日歷程</CardDescription>
       </CardHeader>
 
       <form onSubmit={handleRegister}>
