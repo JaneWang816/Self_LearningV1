@@ -3,7 +3,6 @@
 
 import { useState } from "react"
 import { format } from "date-fns"
-import { zhTW } from "date-fns/locale"
 import { supabase } from "@/lib/supabaseClient"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -27,8 +26,22 @@ import {
 } from "lucide-react"
 import * as XLSX from "xlsx"
 
+// 表名類型
+type TableName = 
+  | "daily_plans"
+  | "tasks"
+  | "habit_logs"
+  | "journals_life"
+  | "journals_learning"
+  | "journals_reading"
+  | "journals_gratitude"
+  | "journals_travel"
+  | "finance_records"
+  | "health_exercises"
+  | "health_metrics"
+
 // 模組定義
-const EXPORT_MODULES = [
+const EXPORT_MODULES: { key: string; label: string; icon: React.ComponentType<{ className?: string }>; table: TableName }[] = [
   { key: "daily_plans", label: "每日行程", icon: CalendarClock, table: "daily_plans" },
   { key: "tasks", label: "任務", icon: CheckSquare, table: "tasks" },
   { key: "habits", label: "習慣打卡", icon: Target, table: "habit_logs" },
@@ -176,7 +189,7 @@ export default function ExportPage() {
         const module = EXPORT_MODULES.find(m => m.key === moduleKey)
         if (!module) continue
 
-        // 查詢資料
+        // 查詢資料 - 使用類型斷言
         const { data, error } = await supabase
           .from(module.table)
           .select("*")
@@ -194,8 +207,8 @@ export default function ExportPage() {
 
         // 轉換欄位名稱
         const columnMap = COLUMN_NAMES[module.table] || {}
-        const transformedData = data.map(row => {
-          const newRow: Record<string, any> = {}
+        const transformedData = data.map((row: Record<string, unknown>) => {
+          const newRow: Record<string, unknown> = {}
           for (const [key, value] of Object.entries(row)) {
             // 排除系統欄位
             if (["id", "user_id", "created_at", "updated_at", "parent_id", "photos"].includes(key)) continue
