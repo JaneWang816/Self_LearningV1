@@ -3,13 +3,13 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: '自主學習平台',
-  description: '中學生自主學習系統 - 題庫練習、錯題本、記憶卡片',
+  title: '日歷',
+  description: '每日記錄與自主學習平台',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: '自學平台',
+    title: '日歷',
   },
   formatDetection: {
     telephone: false,
