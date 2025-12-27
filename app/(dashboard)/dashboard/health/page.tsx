@@ -254,26 +254,29 @@ export default function HealthPage() {
       return
     }
 
-    const metricData: Record<string, unknown> = {
-      metric_type: metricType,
-      value_primary: metricValuePrimary,
-      value_secondary: metricValueSecondary,
-      value_tertiary: metricType === "blood_pressure" ? metricValueTertiary : null,
-      note: metricNote.trim() || null,
-      date: metricDate,
-    }
-
     if (editingMetric) {
       await supabase
         .from("health_metrics")
-        .update(metricData)
+        .update({
+          metric_type: metricType,
+          value_primary: metricValuePrimary!,
+          value_secondary: metricValueSecondary,
+          value_tertiary: metricType === "blood_pressure" ? metricValueTertiary : null,
+          note: metricNote.trim() || null,
+          date: metricDate,
+        })
         .eq("id", editingMetric.id)
     } else {
       await supabase
         .from("health_metrics")
         .insert({
-          ...metricData,
           user_id: user.id,
+          metric_type: metricType,
+          value_primary: metricValuePrimary!,
+          value_secondary: metricValueSecondary,
+          value_tertiary: metricType === "blood_pressure" ? metricValueTertiary : null,
+          note: metricNote.trim() || null,
+          date: metricDate,
         })
     }
 
