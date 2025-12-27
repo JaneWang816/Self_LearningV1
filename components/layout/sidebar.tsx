@@ -185,8 +185,8 @@ export function Sidebar() {
     <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-white border-r">
       {/* Logo */}
       <div className="flex items-center h-16 px-6 border-b">
-        <BookOpen className="w-8 h-8 text-blue-600" />
-        <span className="ml-3 text-xl font-bold text-gray-800">學習平台</span>
+        <img src="/icons/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg" />
+        <span className="ml-3 text-xl font-bold text-gray-800">日歷</span>
       </div>
 
       {/* Navigation */}

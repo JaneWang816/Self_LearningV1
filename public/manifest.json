@@ -1,6 +1,6 @@
 {
-  "name": "學習平台",
-  "short_name": "學習平台",
+  "name": "日歷",
+  "short_name": "日歷",
   "description": "個人學習與生活管理平台",
   "start_url": "/dashboard",
   "display": "standalone",
