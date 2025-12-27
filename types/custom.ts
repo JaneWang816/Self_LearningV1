@@ -57,6 +57,25 @@ export type JournalTravel = {
   updated_at: string
 }
 
+// 每日行程（手動定義）
+export type DailyPlan = {
+  id: string
+  user_id: string
+  date: string
+  title: string
+  start_time: string | null
+  end_time: string | null
+  is_all_day: boolean
+  location: string | null
+  description: string | null
+  color: string
+  recurrence_type: string
+  recurrence_end_date: string | null
+  parent_id: string | null
+  created_at: string
+  updated_at: string
+}
+
 // ============================================
 // 便利類型別名 - Insert (新增)
 // ============================================
@@ -75,6 +94,9 @@ export type DeckInsert = TablesInsert<'decks'>
 
 // 遊覽日誌 Insert
 export type JournalTravelInsert = Omit<JournalTravel, 'id' | 'created_at' | 'updated_at'>
+
+// 每日行程 Insert
+export type DailyPlanInsert = Omit<DailyPlan, 'id' | 'created_at' | 'updated_at'>
 
 // ============================================
 // 便利類型別名 - Update (更新)
@@ -95,6 +117,9 @@ export type DeckUpdate = TablesUpdate<'decks'>
 // 遊覽日誌 Update
 export type JournalTravelUpdate = Partial<Omit<JournalTravel, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
 
+// 每日行程 Update
+export type DailyPlanUpdate = Partial<Omit<DailyPlan, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+
 // ============================================
 // 擴展類型（含額外欄位）
 // ============================================
@@ -106,6 +131,11 @@ export type HabitWithTodayLog = Habit & {
 
 // 任務含例行任務欄位
 export type TaskWithRecurrence = Task
+
+// 健康數值含脈搏欄位
+export type HealthMetricExtended = HealthMetric & {
+  value_tertiary?: number | null
+}
 
 // ============================================
 // 任務四象限類型
@@ -190,9 +220,10 @@ export const MOOD_LABELS: Record<number, string> = {
 // ============================================
 export const METRIC_TYPE_LABELS: Record<string, string> = {
   weight: '體重 (kg)',
-  blood_pressure: '血壓 (mmHg)',
+  blood_pressure: '血壓',
   sleep: '睡眠 (小時)',
   water: '飲水 (ml)',
+  steps: '步數',
 }
 
 // ============================================
@@ -209,7 +240,7 @@ export const EXPENSE_CATEGORIES = [
 
 export const INCOME_CATEGORIES = [
   '零用錢',
-  '獎學金',
+  '獎金',
   '打工',
   '禮金',
   '其他',
@@ -226,10 +257,11 @@ export const EXERCISE_TYPES = [
   '游泳',
   '籃球',
   '羽球',
+  '桌球',
   '健身',
   '瑜珈',
   '騎車',
-  '走路',
+  '健行',
   '其他',
 ] as const
 

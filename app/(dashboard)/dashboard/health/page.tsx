@@ -53,12 +53,21 @@ import {
   Moon,
   Droplets,
   Activity,
+  Footprints,
 } from "lucide-react"
 import {
   EXERCISE_TYPES,
-  METRIC_TYPE_LABELS,
 } from "@/types/custom"
 import type { HealthExercise, HealthMetric } from "@/types/custom"
+
+// 健康數值類型對照（本地定義，包含新的 steps）
+const METRIC_TYPE_LABELS: Record<string, string> = {
+  weight: '體重 (kg)',
+  blood_pressure: '血壓',
+  sleep: '睡眠 (小時)',
+  water: '飲水 (ml)',
+  steps: '步數',
+}
 
 // 運動類型圖示
 const exerciseIcons: Record<string, string> = {
@@ -66,6 +75,7 @@ const exerciseIcons: Record<string, string> = {
   游泳: "🏊",
   籃球: "🏀",
   羽球: "🏸",
+  桌球: "🏓",
   健身: "💪",
   瑜珈: "🧘",
   騎車: "🚴",
@@ -79,11 +89,17 @@ const metricIcons: Record<string, React.ElementType> = {
   blood_pressure: Heart,
   sleep: Moon,
   water: Droplets,
+  steps: Footprints,
+}
+
+// 擴展 HealthMetric 類型（加入 value_tertiary）
+type HealthMetricExtended = HealthMetric & {
+  value_tertiary?: number | null
 }
 
 export default function HealthPage() {
   const [exercises, setExercises] = useState<HealthExercise[]>([])
-  const [metrics, setMetrics] = useState<HealthMetric[]>([])
+  const [metrics, setMetrics] = useState<HealthMetricExtended[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("exercise")
 
@@ -99,17 +115,18 @@ export default function HealthPage() {
 
   // 健康數值表單狀態
   const [metricFormOpen, setMetricFormOpen] = useState(false)
-  const [editingMetric, setEditingMetric] = useState<HealthMetric | null>(null)
+  const [editingMetric, setEditingMetric] = useState<HealthMetricExtended | null>(null)
   const [metricType, setMetricType] = useState<string>("weight")
   const [metricValuePrimary, setMetricValuePrimary] = useState<number | null>(null)
   const [metricValueSecondary, setMetricValueSecondary] = useState<number | null>(null)
+  const [metricValueTertiary, setMetricValueTertiary] = useState<number | null>(null) // 脈搏
   const [metricNote, setMetricNote] = useState("")
   const [metricDate, setMetricDate] = useState(new Date().toISOString().split("T")[0])
 
   // 共用狀態
   const [saving, setSaving] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [deletingItem, setDeletingItem] = useState<{ type: "exercise" | "metric"; item: HealthExercise | HealthMetric } | null>(null)
+  const [deletingItem, setDeletingItem] = useState<{ type: "exercise" | "metric"; item: HealthExercise | HealthMetricExtended } | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
   // 載入資料
@@ -131,7 +148,7 @@ export default function HealthPage() {
     ])
 
     if (exercisesRes.data) setExercises(exercisesRes.data)
-    if (metricsRes.data) setMetrics(metricsRes.data)
+    if (metricsRes.data) setMetrics(metricsRes.data as HealthMetricExtended[])
     setLoading(false)
   }
 
@@ -209,16 +226,18 @@ export default function HealthPage() {
     setMetricType(type || "weight")
     setMetricValuePrimary(null)
     setMetricValueSecondary(null)
+    setMetricValueTertiary(null)
     setMetricNote("")
     setMetricDate(new Date().toISOString().split("T")[0])
     setMetricFormOpen(true)
   }
 
-  const openMetricEditForm = (metric: HealthMetric) => {
+  const openMetricEditForm = (metric: HealthMetricExtended) => {
     setEditingMetric(metric)
     setMetricType(metric.metric_type)
     setMetricValuePrimary(Number(metric.value_primary))
     setMetricValueSecondary(metric.value_secondary ? Number(metric.value_secondary) : null)
+    setMetricValueTertiary(metric.value_tertiary ? Number(metric.value_tertiary) : null)
     setMetricNote(metric.note || "")
     setMetricDate(metric.date)
     setMetricFormOpen(true)
@@ -235,10 +254,11 @@ export default function HealthPage() {
       return
     }
 
-    const metricData = {
+    const metricData: Record<string, unknown> = {
       metric_type: metricType,
       value_primary: metricValuePrimary,
       value_secondary: metricValueSecondary,
+      value_tertiary: metricType === "blood_pressure" ? metricValueTertiary : null,
       note: metricNote.trim() || null,
       date: metricDate,
     }
@@ -264,7 +284,7 @@ export default function HealthPage() {
 
   // ============ 刪除 ============
 
-  const openDeleteDialog = (type: "exercise" | "metric", item: HealthExercise | HealthMetric) => {
+  const openDeleteDialog = (type: "exercise" | "metric", item: HealthExercise | HealthMetricExtended) => {
     setDeletingItem({ type, item })
     setDeleteDialogOpen(true)
   }
@@ -300,20 +320,25 @@ export default function HealthPage() {
       case "blood_pressure": return "血壓"
       case "sleep": return "睡眠"
       case "water": return "飲水"
+      case "steps": return "步數"
       default: return type
     }
   }
 
-  const formatMetricValue = (metric: HealthMetric) => {
+  const formatMetricValue = (metric: HealthMetricExtended) => {
     switch (metric.metric_type) {
       case "weight":
         return `${metric.value_primary} kg`
       case "blood_pressure":
-        return `${metric.value_primary}/${metric.value_secondary || "-"} mmHg`
+        const bp = `${metric.value_primary}/${metric.value_secondary || "-"} mmHg`
+        const pulse = metric.value_tertiary ? ` · ${metric.value_tertiary} bpm` : ""
+        return bp + pulse
       case "sleep":
         return `${metric.value_primary} 小時`
       case "water":
         return `${metric.value_primary} ml`
+      case "steps":
+        return `${metric.value_primary.toLocaleString()} 步`
       default:
         return `${metric.value_primary}`
     }
@@ -329,6 +354,11 @@ export default function HealthPage() {
 
   const totalDuration = thisWeekExercises.reduce((sum, e) => sum + (e.duration_minutes || 0), 0)
   const totalCalories = thisWeekExercises.reduce((sum, e) => sum + (e.calories || 0), 0)
+
+  // 今日步數
+  const todaySteps = metrics.find(
+    (m) => m.metric_type === "steps" && m.date === new Date().toISOString().split("T")[0]
+  )
 
   if (loading) {
     return (
@@ -349,7 +379,7 @@ export default function HealthPage() {
       </div>
 
       {/* 本週統計 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <Activity className="w-6 h-6 text-green-600 mx-auto mb-2" />
@@ -373,7 +403,16 @@ export default function HealthPage() {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <Dumbbell className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+            <Footprints className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+            <p className="text-2xl font-bold text-gray-800">
+              {todaySteps ? todaySteps.value_primary.toLocaleString() : "-"}
+            </p>
+            <p className="text-sm text-gray-500">今日步數</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Dumbbell className="w-6 h-6 text-gray-600 mx-auto mb-2" />
             <p className="text-2xl font-bold text-gray-800">{exercises.length}</p>
             <p className="text-sm text-gray-500">總運動記錄</p>
           </CardContent>
@@ -441,7 +480,7 @@ export default function HealthPage() {
         {/* 健康數值 */}
         <TabsContent value="metrics" className="space-y-4 mt-4">
           {/* 快速新增按鈕 */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {Object.entries(METRIC_TYPE_LABELS).map(([type, label]) => {
               const Icon = metricIcons[type] || Activity
               return (
@@ -612,24 +651,19 @@ export default function HealthPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>
-                  {metricType === "weight" && "體重 (kg) *"}
-                  {metricType === "blood_pressure" && "收縮壓 (mmHg) *"}
-                  {metricType === "sleep" && "睡眠時數 *"}
-                  {metricType === "water" && "飲水量 (ml) *"}
-                </Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step={metricType === "weight" ? "0.1" : "1"}
-                  value={metricValuePrimary || ""}
-                  onChange={(e) => setMetricValuePrimary(e.target.value ? parseFloat(e.target.value) : null)}
-                  placeholder={metricType === "weight" ? "65.5" : metricType === "sleep" ? "7" : ""}
-                />
-              </div>
-              {metricType === "blood_pressure" && (
+            {/* 根據類型顯示不同輸入欄位 */}
+            {metricType === "blood_pressure" ? (
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>收縮壓 (mmHg) *</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={metricValuePrimary || ""}
+                    onChange={(e) => setMetricValuePrimary(e.target.value ? parseFloat(e.target.value) : null)}
+                    placeholder="120"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label>舒張壓 (mmHg)</Label>
                   <Input
@@ -640,8 +674,40 @@ export default function HealthPage() {
                     placeholder="80"
                   />
                 </div>
-              )}
-            </div>
+                <div className="space-y-2">
+                  <Label>脈搏 (bpm)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={metricValueTertiary || ""}
+                    onChange={(e) => setMetricValueTertiary(e.target.value ? parseFloat(e.target.value) : null)}
+                    placeholder="72"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>
+                  {metricType === "weight" && "體重 (kg) *"}
+                  {metricType === "sleep" && "睡眠時數 *"}
+                  {metricType === "water" && "飲水量 (ml) *"}
+                  {metricType === "steps" && "步數 *"}
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step={metricType === "weight" ? "0.1" : "1"}
+                  value={metricValuePrimary || ""}
+                  onChange={(e) => setMetricValuePrimary(e.target.value ? parseFloat(e.target.value) : null)}
+                  placeholder={
+                    metricType === "weight" ? "65.5" : 
+                    metricType === "sleep" ? "7" : 
+                    metricType === "water" ? "2000" :
+                    metricType === "steps" ? "10000" : ""
+                  }
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>備註</Label>
@@ -784,11 +850,11 @@ function MetricCard({
   formatValue,
   getLabel,
 }: {
-  metric: HealthMetric
+  metric: HealthMetricExtended
   onEdit: () => void
   onDelete: () => void
   formatDate: (date: string) => string
-  formatValue: (metric: HealthMetric) => string
+  formatValue: (metric: HealthMetricExtended) => string
   getLabel: (type: string) => string
 }) {
   const [showMenu, setShowMenu] = useState(false)
