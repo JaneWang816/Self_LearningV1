@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -55,12 +55,10 @@ import {
   Activity,
   Footprints,
 } from "lucide-react"
-import {
-  EXERCISE_TYPES,
-} from "@/types/custom"
+import { EXERCISE_TYPES } from "@/types/custom"
 import type { HealthExercise, HealthMetric } from "@/types/custom"
 
-// 健康數值類型對照（本地定義，包含新的 steps）
+// 健康數值類型對照
 const METRIC_TYPE_LABELS: Record<string, string> = {
   weight: '體重 (kg)',
   blood_pressure: '血壓',
@@ -92,9 +90,10 @@ const metricIcons: Record<string, React.ElementType> = {
   steps: Footprints,
 }
 
-// 擴展 HealthMetric 類型（加入 value_tertiary）
+// 擴展 HealthMetric 類型
 type HealthMetricExtended = HealthMetric & {
   value_tertiary?: number | null
+  measured_time?: string | null
 }
 
 export default function HealthPage() {
@@ -119,9 +118,10 @@ export default function HealthPage() {
   const [metricType, setMetricType] = useState<string>("weight")
   const [metricValuePrimary, setMetricValuePrimary] = useState<number | null>(null)
   const [metricValueSecondary, setMetricValueSecondary] = useState<number | null>(null)
-  const [metricValueTertiary, setMetricValueTertiary] = useState<number | null>(null) // 脈搏
+  const [metricValueTertiary, setMetricValueTertiary] = useState<number | null>(null)
   const [metricNote, setMetricNote] = useState("")
   const [metricDate, setMetricDate] = useState(new Date().toISOString().split("T")[0])
+  const [metricTime, setMetricTime] = useState<string>("")
 
   // 共用狀態
   const [saving, setSaving] = useState(false)
@@ -144,7 +144,8 @@ export default function HealthPage() {
         .from("health_metrics")
         .select("*")
         .eq("user_id", user.id)
-        .order("date", { ascending: false }),
+        .order("date", { ascending: false })
+        .order("measured_time", { ascending: false, nullsFirst: false }),
     ])
 
     if (exercisesRes.data) setExercises(exercisesRes.data)
@@ -229,6 +230,7 @@ export default function HealthPage() {
     setMetricValueTertiary(null)
     setMetricNote("")
     setMetricDate(new Date().toISOString().split("T")[0])
+    setMetricTime("")
     setMetricFormOpen(true)
   }
 
@@ -240,6 +242,7 @@ export default function HealthPage() {
     setMetricValueTertiary(metric.value_tertiary ? Number(metric.value_tertiary) : null)
     setMetricNote(metric.note || "")
     setMetricDate(metric.date)
+    setMetricTime(metric.measured_time || "")
     setMetricFormOpen(true)
   }
 
@@ -259,9 +262,10 @@ export default function HealthPage() {
         .from("health_metrics")
         .update({
           metric_type: metricType,
-          value_primary: metricValuePrimary!,
+          value_primary: metricValuePrimary,
           value_secondary: metricValueSecondary,
           value_tertiary: metricType === "blood_pressure" ? metricValueTertiary : null,
+          measured_time: metricTime || null,
           note: metricNote.trim() || null,
           date: metricDate,
         })
@@ -272,9 +276,10 @@ export default function HealthPage() {
         .insert({
           user_id: user.id,
           metric_type: metricType,
-          value_primary: metricValuePrimary!,
+          value_primary: metricValuePrimary,
           value_secondary: metricValueSecondary,
           value_tertiary: metricType === "blood_pressure" ? metricValueTertiary : null,
+          measured_time: metricTime || null,
           note: metricNote.trim() || null,
           date: metricDate,
         })
@@ -329,13 +334,15 @@ export default function HealthPage() {
   }
 
   const formatMetricValue = (metric: HealthMetricExtended) => {
+    const timeStr = metric.measured_time ? ` (${metric.measured_time.substring(0, 5)})` : ""
+    
     switch (metric.metric_type) {
       case "weight":
         return `${metric.value_primary} kg`
       case "blood_pressure":
         const bp = `${metric.value_primary}/${metric.value_secondary || "-"} mmHg`
         const pulse = metric.value_tertiary ? ` · ${metric.value_tertiary} bpm` : ""
-        return bp + pulse
+        return bp + pulse + timeStr
       case "sleep":
         return `${metric.value_primary} 小時`
       case "water":
@@ -656,38 +663,48 @@ export default function HealthPage() {
 
             {/* 根據類型顯示不同輸入欄位 */}
             {metricType === "blood_pressure" ? (
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>收縮壓 (mmHg) *</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={metricValuePrimary || ""}
-                    onChange={(e) => setMetricValuePrimary(e.target.value ? parseFloat(e.target.value) : null)}
-                    placeholder="120"
-                  />
+              <>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>收縮壓 *</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={metricValuePrimary || ""}
+                      onChange={(e) => setMetricValuePrimary(e.target.value ? parseFloat(e.target.value) : null)}
+                      placeholder="120"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>舒張壓</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={metricValueSecondary || ""}
+                      onChange={(e) => setMetricValueSecondary(e.target.value ? parseFloat(e.target.value) : null)}
+                      placeholder="80"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>脈搏</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={metricValueTertiary || ""}
+                      onChange={(e) => setMetricValueTertiary(e.target.value ? parseFloat(e.target.value) : null)}
+                      placeholder="72"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>舒張壓 (mmHg)</Label>
+                  <Label>測量時間</Label>
                   <Input
-                    type="number"
-                    min="0"
-                    value={metricValueSecondary || ""}
-                    onChange={(e) => setMetricValueSecondary(e.target.value ? parseFloat(e.target.value) : null)}
-                    placeholder="80"
+                    type="time"
+                    value={metricTime}
+                    onChange={(e) => setMetricTime(e.target.value)}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>脈搏 (bpm)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={metricValueTertiary || ""}
-                    onChange={(e) => setMetricValueTertiary(e.target.value ? parseFloat(e.target.value) : null)}
-                    placeholder="72"
-                  />
-                </div>
-              </div>
+              </>
             ) : (
               <div className="space-y-2">
                 <Label>
