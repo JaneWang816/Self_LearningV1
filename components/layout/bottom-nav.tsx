@@ -13,11 +13,13 @@ import {
   CheckSquare,
   ListTodo,
   Calendar,
+  CalendarClock,
   GraduationCap,
   MoreHorizontal,
   Dumbbell,
   Wallet,
   Settings,
+  Download,
 } from "lucide-react"
 
 interface NavItem {
@@ -25,19 +27,21 @@ interface NavItem {
   href: string
   icon: React.ComponentType<{ className?: string }>
   module?: ModuleType
-  priority: number // 數字越小優先級越高
+  priority: number
 }
 
 const allNavItems: NavItem[] = [
-  { title: "總覽", href: "/", icon: LayoutDashboard, priority: 0 },
-  { title: "日誌", href: "/journal", icon: BookOpen, module: "journal", priority: 1 },
-  { title: "習慣", href: "/habits", icon: CheckSquare, module: "habits", priority: 2 },
-  { title: "任務", href: "/tasks", icon: ListTodo, module: "tasks", priority: 3 },
-  { title: "課表", href: "/schedule", icon: Calendar, module: "schedule", priority: 4 },
-  { title: "學習", href: "/dashboard", icon: GraduationCap, module: "study", priority: 5 },
-  { title: "健康", href: "/health", icon: Dumbbell, module: "health", priority: 6 },
-  { title: "收支", href: "/finance", icon: Wallet, module: "finance", priority: 7 },
-  { title: "設定", href: "/settings", icon: Settings, priority: 8 },
+  { title: "總覽", href: "/dashboard", icon: LayoutDashboard, priority: 0 },
+  { title: "行程", href: "/dashboard/plans", icon: CalendarClock, priority: 1 },
+  { title: "日誌", href: "/dashboard/journal/life", icon: BookOpen, module: "journal", priority: 2 },
+  { title: "習慣", href: "/dashboard/habits", icon: CheckSquare, module: "habits", priority: 3 },
+  { title: "任務", href: "/dashboard/tasks", icon: ListTodo, module: "tasks", priority: 4 },
+  { title: "課表", href: "/dashboard/schedule", icon: Calendar, module: "schedule", priority: 5 },
+  { title: "學習", href: "/dashboard/subjects", icon: GraduationCap, module: "study", priority: 6 },
+  { title: "健康", href: "/dashboard/health", icon: Dumbbell, module: "health", priority: 7 },
+  { title: "收支", href: "/dashboard/finance", icon: Wallet, module: "finance", priority: 8 },
+  { title: "匯出", href: "/dashboard/export", icon: Download, priority: 9 },
+  { title: "設定", href: "/dashboard/settings", icon: Settings, priority: 10 },
 ]
 
 const MAX_VISIBLE_ITEMS = 5
@@ -86,7 +90,7 @@ export function BottomNav() {
 
   // 判斷是否為當前路徑
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/"
+    if (href === "/dashboard") return pathname === "/dashboard"
     return pathname === href || pathname.startsWith(href + "/")
   }
 
