@@ -455,26 +455,32 @@ export default function DashboardPage() {
           fetchExercises()
           break
 
-        case "health":
-          if (formData.id) {
-            await supabase.from("health_metrics").update({
-              metric_type: formData.metric_type,
-              value_primary: parseFloat(formData.value_primary),
-              value_secondary: formData.value_secondary ? parseFloat(formData.value_secondary) : null,
-              note: formData.note,
-            }).eq("id", formData.id)
-          } else {
-            await supabase.from("health_metrics").insert({
-              user_id: user.id,
-              metric_type: formData.metric_type,
-              value_primary: parseFloat(formData.value_primary),
-              value_secondary: formData.value_secondary ? parseFloat(formData.value_secondary) : null,
-              note: formData.note,
-              date: selectedDateKey,
-            })
-          }
-          fetchHealthMetrics()
-          break
+      case "health":
+        if (formData.id) {
+          await supabase.from("health_metrics").update({
+            metric_type: formData.metric_type,
+            value_primary: parseFloat(formData.value_primary),
+            value_secondary: formData.value_secondary ? parseFloat(formData.value_secondary) : null,
+            value_tertiary: formData.metric_type === "blood_pressure" && formData.value_tertiary 
+              ? parseFloat(formData.value_tertiary) : null,
+            measured_time: formData.measured_time || null,
+            note: formData.note,
+          }).eq("id", formData.id)
+        } else {
+          await supabase.from("health_metrics").insert({
+            user_id: user.id,
+            metric_type: formData.metric_type,
+            value_primary: parseFloat(formData.value_primary),
+            value_secondary: formData.value_secondary ? parseFloat(formData.value_secondary) : null,
+            value_tertiary: formData.metric_type === "blood_pressure" && formData.value_tertiary 
+              ? parseFloat(formData.value_tertiary) : null,
+            measured_time: formData.measured_time || null,
+            note: formData.note,
+            date: selectedDateKey,
+          })
+        }
+        fetchHealthMetrics()
+        break
       }
       fetchIndicators()
     } catch (error) {

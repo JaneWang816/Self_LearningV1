@@ -241,7 +241,7 @@ export default function ExportPage() {
       }
 
       // 下載檔案
-      const fileName = `學習平台_${startDate}_${endDate}.xlsx`
+      const fileName = `日歷_${startDate}_${endDate}.xlsx`
       XLSX.writeFile(workbook, fileName)
 
     } catch (error) {

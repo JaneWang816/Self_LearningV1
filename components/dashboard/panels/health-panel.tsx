@@ -1,18 +1,23 @@
 // components/dashboard/panels/health-panel.tsx
 "use client"
 
-import { Activity, Scale, Moon, Droplets, Pencil, Trash2 } from "lucide-react"
+import { Activity, Scale, Moon, Droplets, Heart, Footprints, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PanelWrapper, EmptyState } from "./panel-wrapper"
-import { METRIC_CONFIG } from "./constants"
 import type { HealthMetric } from "@/types/custom"
 
+// 擴展類型
+type HealthMetricExtended = HealthMetric & {
+  value_tertiary?: number | null
+  measured_time?: string | null
+}
+
 interface HealthPanelProps {
-  metrics: HealthMetric[]
+  metrics: HealthMetricExtended[]
   loading: boolean
   panelColor: string
   onAdd: () => void
-  onEdit: (metric: HealthMetric) => void
+  onEdit: (metric: HealthMetricExtended) => void
   onDelete: (id: string) => void
 }
 
@@ -20,7 +25,16 @@ const METRIC_ICONS: Record<string, React.ElementType> = {
   weight: Scale,
   sleep: Moon,
   water: Droplets,
-  blood_pressure: Activity,
+  blood_pressure: Heart,
+  steps: Footprints,
+}
+
+const METRIC_CONFIG: Record<string, { label: string; unit: string }> = {
+  weight: { label: "體重", unit: "kg" },
+  sleep: { label: "睡眠", unit: "小時" },
+  water: { label: "飲水", unit: "ml" },
+  blood_pressure: { label: "血壓", unit: "mmHg" },
+  steps: { label: "步數", unit: "步" },
 }
 
 export function HealthPanel({
@@ -31,6 +45,25 @@ export function HealthPanel({
   onEdit,
   onDelete,
 }: HealthPanelProps) {
+  // 格式化數值顯示
+  const formatValue = (metric: HealthMetricExtended) => {
+    const metricType = metric.metric_type || "weight"
+    const config = METRIC_CONFIG[metricType]
+
+    if (metricType === "blood_pressure") {
+      const bp = `${metric.value_primary}/${metric.value_secondary || "-"}`
+      const pulse = metric.value_tertiary ? ` · ${metric.value_tertiary} bpm` : ""
+      const time = metric.measured_time ? ` (${metric.measured_time.substring(0, 5)})` : ""
+      return bp + " " + config.unit + pulse + time
+    }
+
+    if (metricType === "steps") {
+      return `${metric.value_primary.toLocaleString()} ${config.unit}`
+    }
+
+    return `${metric.value_primary} ${config.unit}`
+  }
+
   return (
     <PanelWrapper
       title="健康數值"
@@ -58,11 +91,8 @@ export function HealthPanel({
                   <p className="font-medium">{config?.label || metricType}</p>
                   {metric.note && <p className="text-sm text-gray-500">{metric.note}</p>}
                 </div>
-                <span className="font-semibold">
-                  {metricType === "blood_pressure" && metric.value_secondary
-                    ? `${metric.value_primary}/${metric.value_secondary}`
-                    : metric.value_primary
-                  } {config?.unit}
+                <span className="font-semibold text-sm">
+                  {formatValue(metric)}
                 </span>
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(metric)}>
                   <Pencil className="w-3 h-3" />
