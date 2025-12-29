@@ -39,10 +39,16 @@ import {
   RotateCcw,
   Upload,
   ClipboardList,
+  FileText,
 } from "lucide-react"
 import { FlashcardImport } from "@/components/flashcards/flashcard-import"
 import { getNextReviewText } from "@/lib/sm2"
 import type { Deck, Flashcard } from "@/types/custom"
+
+// 擴展 Flashcard 類型
+type FlashcardWithNote = Flashcard & {
+  note?: string | null
+}
 
 export default function DeckDetailPage() {
   const params = useParams()
@@ -50,19 +56,20 @@ export default function DeckDetailPage() {
   const deckId = params.deckId as string
 
   const [deck, setDeck] = useState<Deck | null>(null)
-  const [cards, setCards] = useState<Flashcard[]>([])
+  const [cards, setCards] = useState<FlashcardWithNote[]>([])
   const [loading, setLoading] = useState(true)
 
   // 表單狀態
   const [formOpen, setFormOpen] = useState(false)
-  const [editingCard, setEditingCard] = useState<Flashcard | null>(null)
+  const [editingCard, setEditingCard] = useState<FlashcardWithNote | null>(null)
   const [front, setFront] = useState("")
   const [back, setBack] = useState("")
+  const [note, setNote] = useState("")
   const [saving, setSaving] = useState(false)
 
   // 刪除狀態
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [deletingCard, setDeletingCard] = useState<Flashcard | null>(null)
+  const [deletingCard, setDeletingCard] = useState<FlashcardWithNote | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
   // 匯入對話框
@@ -128,14 +135,16 @@ export default function DeckDetailPage() {
     setEditingCard(null)
     setFront("")
     setBack("")
+    setNote("")
     setFormOpen(true)
   }
 
   // 開啟編輯表單
-  const openEditForm = (card: Flashcard) => {
+  const openEditForm = (card: FlashcardWithNote) => {
     setEditingCard(card)
     setFront(card.front)
     setBack(card.back)
+    setNote(card.note || "")
     setFormOpen(true)
   }
 
@@ -158,6 +167,7 @@ export default function DeckDetailPage() {
         .update({
           front: front.trim(),
           back: back.trim(),
+          note: note.trim() || null,
         })
         .eq("id", editingCard.id)
     } else {
@@ -169,6 +179,7 @@ export default function DeckDetailPage() {
           deck_id: deckId,
           front: front.trim(),
           back: back.trim(),
+          note: note.trim() || null,
           next_review_at: new Date().toISOString(),
           interval: 0,
           ease_factor: 2.5,
@@ -182,7 +193,7 @@ export default function DeckDetailPage() {
   }
 
   // 開啟刪除確認
-  const openDeleteDialog = (card: Flashcard) => {
+  const openDeleteDialog = (card: FlashcardWithNote) => {
     setDeletingCard(card)
     setDeleteDialogOpen(true)
   }
@@ -205,7 +216,7 @@ export default function DeckDetailPage() {
   }
 
   // 重設卡片進度
-  const resetCard = async (card: Flashcard) => {
+  const resetCard = async (card: FlashcardWithNote) => {
     await supabase
       .from("flashcards")
       .update({
@@ -225,7 +236,7 @@ export default function DeckDetailPage() {
   }
 
   // 計算卡片狀態
-  const getCardStatus = (card: Flashcard) => {
+  const getCardStatus = (card: FlashcardWithNote) => {
     const today = new Date()
     today.setHours(23, 59, 59, 999)
     const nextReview = new Date(card.next_review_at || 0)
@@ -405,7 +416,7 @@ export default function DeckDetailPage() {
                 value={front}
                 onChange={(e) => setFront(e.target.value)}
                 placeholder="例如：apple"
-                rows={3}
+                rows={2}
               />
             </div>
             <div className="space-y-2">
@@ -415,8 +426,25 @@ export default function DeckDetailPage() {
                 value={back}
                 onChange={(e) => setBack(e.target.value)}
                 placeholder="例如：蘋果"
-                rows={3}
+                rows={2}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="note" className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-gray-400" />
+                備註（例句/補充）
+              </Label>
+              <Textarea
+                id="note"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="例如：An apple a day keeps the doctor away.&#10;我每天吃一顆蘋果保持健康。"
+                rows={3}
+                className="text-sm"
+              />
+              <p className="text-xs text-gray-400">
+                可輸入例句、詞性、音標、記憶口訣等補充資訊
+              </p>
             </div>
           </div>
 
@@ -476,7 +504,7 @@ function FlashcardItem({
   onDelete,
   onReset,
 }: {
-  card: Flashcard
+  card: FlashcardWithNote
   status: { text: string; color: string }
   onEdit: () => void
   onDelete: () => void
@@ -501,6 +529,12 @@ function FlashcardItem({
               <span className="text-xs text-gray-400">
                 點擊翻轉
               </span>
+              {card.note && (
+                <span className="text-xs text-blue-500 flex items-center gap-1">
+                  <FileText className="w-3 h-3" />
+                  有備註
+                </span>
+              )}
             </div>
 
             {!flipped ? (
@@ -512,6 +546,12 @@ function FlashcardItem({
               <div>
                 <p className="text-xs text-gray-500 mb-1">背面</p>
                 <p className="text-gray-800 whitespace-pre-wrap">{card.back}</p>
+                {card.note && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-400 mb-1">📝 備註</p>
+                    <p className="text-sm text-gray-600 whitespace-pre-wrap">{card.note}</p>
+                  </div>
+                )}
               </div>
             )}
 

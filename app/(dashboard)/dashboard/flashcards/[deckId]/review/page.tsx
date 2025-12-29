@@ -14,10 +14,16 @@ import {
   Layers,
   Volume2,
   VolumeX,
+  FileText,
 } from "lucide-react"
 import { calculateSM2, getNextReviewText } from "@/lib/sm2"
 import { speakWithLang, stopSpeaking, type LanguageCode } from "@/lib/speech"
 import type { Deck, Flashcard } from "@/types/custom"
+
+// 擴展類型
+type FlashcardWithNote = Flashcard & {
+  note?: string | null
+}
 
 export default function ReviewPage() {
   const params = useParams()
@@ -25,7 +31,7 @@ export default function ReviewPage() {
   const deckId = params.deckId as string
 
   const [deck, setDeck] = useState<Deck | null>(null)
-  const [cards, setCards] = useState<Flashcard[]>([])
+  const [cards, setCards] = useState<FlashcardWithNote[]>([])
   const [loading, setLoading] = useState(true)
 
   // 複習狀態
@@ -408,6 +414,20 @@ export default function ReviewPage() {
               <p className="text-xl text-gray-800 text-center whitespace-pre-wrap">
                 {currentCard.back}
               </p>
+              
+              {/* 備註區塊 */}
+              {currentCard.note && (
+                <div className="mt-6 pt-4 border-t border-gray-200 w-full">
+                  <div className="flex items-center gap-1 text-xs text-gray-400 mb-2 justify-center">
+                    <FileText className="w-3 h-3" />
+                    備註
+                  </div>
+                  <p className="text-sm text-gray-600 text-center whitespace-pre-wrap">
+                    {currentCard.note}
+                  </p>
+                </div>
+              )}
+              
               {/* 語音按鈕 */}
               <button
                 onClick={(e) => {

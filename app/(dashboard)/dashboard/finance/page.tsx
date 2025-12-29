@@ -112,17 +112,24 @@ export default function FinancePage() {
 
     setUserId(user.id)
 
-    // 分開查詢記錄和分類
-    const [recordsRes, categoriesRes, profileRes] = await Promise.all([
+    // 分開查詢記錄、用戶分類、預設分類
+    const [recordsRes, userCategoriesRes, defaultCategoriesRes, profileRes] = await Promise.all([
       supabase
         .from("finance_records")
         .select("*")
         .eq("user_id", user.id)
         .order("date", { ascending: false }),
+      // 用戶自訂分類
       supabase
         .from("finance_categories")
         .select("*")
-        .or(`user_id.eq.${user.id},user_id.is.null`)
+        .eq("user_id", user.id)
+        .order("sort_order", { ascending: true }),
+      // 預設分類
+      supabase
+        .from("finance_categories")
+        .select("*")
+        .is("user_id", null)
         .order("sort_order", { ascending: true }),
       supabase
         .from("profiles")
@@ -131,14 +138,18 @@ export default function FinancePage() {
         .single(),
     ])
 
+    // 合併分類（預設在前，自訂在後）
+    const allCategories = [
+      ...(defaultCategoriesRes.data || []),
+      ...(userCategoriesRes.data || []),
+    ] as FinanceCategory[]
+
     // 建立分類對照表
     const categoryMap = new Map<string, FinanceCategory>()
-    if (categoriesRes.data) {
-      categoriesRes.data.forEach((cat) => {
-        categoryMap.set(cat.id, cat as FinanceCategory)
-      })
-      setCategories(categoriesRes.data as FinanceCategory[])
-    }
+    allCategories.forEach((cat) => {
+      categoryMap.set(cat.id, cat)
+    })
+    setCategories(allCategories)
 
     // 組合記錄與分類
     if (recordsRes.data) {

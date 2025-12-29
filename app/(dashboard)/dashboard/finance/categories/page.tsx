@@ -113,13 +113,26 @@ export default function CategoriesPage() {
 
     setUserId(user.id)
 
-    const { data } = await supabase
-      .from("finance_categories")
-      .select("*")
-      .or(`user_id.eq.${user.id},user_id.is.null`)
-      .order("sort_order", { ascending: true })
+    // 分開查詢
+    const [userCategoriesRes, defaultCategoriesRes] = await Promise.all([
+      supabase
+        .from("finance_categories")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("finance_categories")
+        .select("*")
+        .is("user_id", null)
+        .order("sort_order", { ascending: true }),
+    ])
 
-    if (data) setCategories(data as FinanceCategory[])
+    const allCategories = [
+      ...(defaultCategoriesRes.data || []),
+      ...(userCategoriesRes.data || []),
+    ] as FinanceCategory[]
+
+    setCategories(allCategories)
     setLoading(false)
   }
 

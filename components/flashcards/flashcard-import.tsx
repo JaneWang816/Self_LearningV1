@@ -31,6 +31,7 @@ interface FlashcardImportProps {
 interface ParsedCard {
   front: string
   back: string
+  note: string
   valid: boolean
   error?: string
 }
@@ -50,12 +51,12 @@ export function FlashcardImport({
 
   // 下載範本
   const downloadTemplate = () => {
-    const template = `正面,背面
-apple,蘋果
-book,書本
-computer,電腦
-"Hello, how are you?",你好，你好嗎？
-光合作用的產物是什麼？,葡萄糖和氧氣`
+    const template = `正面,背面,備註
+apple,蘋果,An apple a day keeps the doctor away.
+book,書本,I love reading books.
+computer,電腦,
+"Hello, how are you?",你好，你好嗎？,常用問候語
+光合作用的產物是什麼？,葡萄糖和氧氣,6CO2 + 6H2O → C6H12O6 + 6O2`
 
     const blob = new Blob(["\uFEFF" + template], { type: "text/csv;charset=utf-8" })
     const url = URL.createObjectURL(blob)
@@ -83,6 +84,7 @@ computer,電腦
         cards.push({
           front: values[0] || "",
           back: "",
+          note: "",
           valid: false,
           error: "格式錯誤：缺少背面內容",
         })
@@ -91,11 +93,13 @@ computer,電腦
 
       const front = values[0].trim()
       const back = values[1].trim()
+      const note = values[2]?.trim() || ""
 
       if (!front) {
         cards.push({
           front,
           back,
+          note,
           valid: false,
           error: "正面不能為空",
         })
@@ -106,6 +110,7 @@ computer,電腦
         cards.push({
           front,
           back,
+          note,
           valid: false,
           error: "背面不能為空",
         })
@@ -115,6 +120,7 @@ computer,電腦
       cards.push({
         front,
         back,
+        note,
         valid: true,
       })
     }
@@ -193,6 +199,7 @@ computer,電腦
       deck_id: deckId,
       front: card.front,
       back: card.back,
+      note: card.note || null,
       next_review_at: new Date().toISOString(),
       interval: 0,
       ease_factor: 2.5,
@@ -236,10 +243,11 @@ computer,電腦
 
   const validCount = parsedCards.filter((c) => c.valid).length
   const invalidCount = parsedCards.filter((c) => !c.valid).length
+  const withNoteCount = parsedCards.filter((c) => c.valid && c.note).length
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>批次匯入卡片</DialogTitle>
           <DialogDescription>
@@ -271,8 +279,9 @@ computer,電腦
             <div className="p-4 bg-gray-50 rounded-lg">
               <p className="font-medium text-gray-800 mb-2">CSV 格式說明</p>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• 第一行為標題：正面,背面</li>
+                <li>• 第一行為標題：正面,背面,備註</li>
                 <li>• 每行一張卡片</li>
+                <li>• 備註欄位可留空（用於例句、補充說明）</li>
                 <li>• 內容含逗號請用引號包裹</li>
                 <li>• 編碼請使用 UTF-8</li>
               </ul>
@@ -301,11 +310,17 @@ computer,電腦
         {step === "preview" && (
           <div className="space-y-4 py-4">
             {/* 統計 */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-green-500" />
                 <span className="text-green-700">{validCount} 張有效</span>
               </div>
+              {withNoteCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-500" />
+                  <span className="text-blue-700">{withNoteCount} 張有備註</span>
+                </div>
+              )}
               {invalidCount > 0 && (
                 <div className="flex items-center gap-2">
                   <XCircle className="w-5 h-5 text-red-500" />
@@ -328,7 +343,10 @@ computer,電腦
                     <th className="px-3 py-2 text-left font-medium text-gray-600">
                       背面
                     </th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-600 w-20">
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">
+                      備註
+                    </th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600 w-16">
                       狀態
                     </th>
                   </tr>
@@ -345,6 +363,9 @@ computer,電腦
                       </td>
                       <td className="px-3 py-2">
                         <span className="line-clamp-2">{card.back}</span>
+                      </td>
+                      <td className="px-3 py-2 text-gray-500">
+                        <span className="line-clamp-2">{card.note || "-"}</span>
                       </td>
                       <td className="px-3 py-2">
                         {card.valid ? (
