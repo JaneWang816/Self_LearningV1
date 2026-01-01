@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import { calculateSM2, getNextReviewText } from "@/lib/sm2"
 import { speakWithLang, stopSpeaking, type LanguageCode } from "@/lib/speech"
+import { updateDailyStudySummary } from "@/lib/study-stats"
 import type { Deck, Flashcard } from "@/types/custom"
 
 // 擴展類型
@@ -189,17 +190,24 @@ export default function ReviewPage() {
       .eq("id", currentCard.id)
 
     // 更新統計
-    setStats((prev) => ({
-      ...prev,
-      reviewed: prev.reviewed + 1,
-      correct: prev.correct + (quality >= 3 ? 1 : 0),
-    }))
+    const newStats = {
+      ...stats,
+      reviewed: stats.reviewed + 1,
+      correct: stats.correct + (quality >= 3 ? 1 : 0),
+    }
+    setStats(newStats)
 
     // 進入下一張或完成
     if (currentIndex < cards.length - 1) {
       setCurrentIndex(currentIndex + 1)
       setFlipped(false)
     } else {
+      // 複習完成，更新每日學習統計
+      await updateDailyStudySummary({
+        type: "flashcard",
+        reviewed: newStats.reviewed,
+        correct: newStats.correct,
+      })
       setCompleted(true)
     }
   }

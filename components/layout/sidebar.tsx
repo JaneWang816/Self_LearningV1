@@ -27,6 +27,7 @@ import {
   XCircle,
   Lightbulb,
   Download,
+  BarChart2,
 } from "lucide-react"
 
 // 導航項目定義
@@ -90,6 +91,7 @@ const navItems: NavItem[] = [
       { title: "題庫練習", href: "/dashboard/practice", icon: FileQuestion },
       { title: "錯題本", href: "/dashboard/mistakes", icon: XCircle },
       { title: "記憶卡片", href: "/dashboard/flashcards", icon: Lightbulb },
+      { title: "學習統計", href: "/dashboard/stats", icon: BarChart2 },
     ],
   },
   {
@@ -186,7 +188,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex items-center h-16 px-6 border-b">
         <img src="/icons/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg" />
-        <span className="ml-3 text-xl font-bold text-gray-800">日歷</span>
+        <span className="ml-3 text-xl font-bold text-gray-800">日曆</span>
       </div>
 
       {/* Navigation */}

@@ -47,6 +47,7 @@ import {
   Clock,
   BarChart3,
 } from "lucide-react"
+import { updateDailyStudySummary } from "@/lib/study-stats"
 import type { JournalLearning, Subject } from "@/types/custom"
 
 // 難度標籤
@@ -157,6 +158,56 @@ export default function LearningJournalPage() {
     setFormOpen(true)
   }
 
+  // 更新學習時間統計
+  const updateStudyMinutes = async (journalDate: string, minutesDelta: number) => {
+    if (minutesDelta === 0) return
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // 檢查是否為今天的日誌
+    const today = new Date().toISOString().split("T")[0]
+    if (journalDate !== today) {
+      // 如果不是今天，需要手動更新該日期的記錄
+      const { data: existing } = await supabase
+        .from("daily_study_summary")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", journalDate)
+        .single()
+
+      if (existing) {
+        const newMinutes = Math.max(0, (existing.study_minutes || 0) + minutesDelta)
+        await supabase
+          .from("daily_study_summary")
+          .update({ 
+            study_minutes: newMinutes,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id)
+      } else if (minutesDelta > 0) {
+        // 建立新記錄
+        await supabase
+          .from("daily_study_summary")
+          .insert({
+            user_id: user.id,
+            date: journalDate,
+            flashcard_reviewed: 0,
+            flashcard_correct: 0,
+            question_practiced: 0,
+            question_correct: 0,
+            study_minutes: minutesDelta,
+          })
+      }
+    } else {
+      // 今天的記錄使用 helper function
+      await updateDailyStudySummary({
+        type: "study_time",
+        minutes: minutesDelta,
+      })
+    }
+  }
+
   // 儲存日誌
   const handleSave = async () => {
     if (!content.trim()) return
@@ -179,17 +230,46 @@ export default function LearningJournalPage() {
     }
 
     if (editingJournal) {
+      // 編輯模式：計算時間差
+      const oldMinutes = editingJournal.duration_minutes || 0
+      const newMinutes = durationMinutes || 0
+      const oldDate = editingJournal.date
+      const newDate = date
+
       await supabase
         .from("journals_learning")
         .update(journalData)
         .eq("id", editingJournal.id)
+
+      // 更新統計
+      if (oldDate === newDate) {
+        // 同一天，只更新差值
+        const delta = newMinutes - oldMinutes
+        if (delta !== 0) {
+          await updateStudyMinutes(newDate, delta)
+        }
+      } else {
+        // 不同天，舊日期扣除，新日期增加
+        if (oldMinutes > 0) {
+          await updateStudyMinutes(oldDate, -oldMinutes)
+        }
+        if (newMinutes > 0) {
+          await updateStudyMinutes(newDate, newMinutes)
+        }
+      }
     } else {
+      // 新增模式
       await supabase
         .from("journals_learning")
         .insert({
           ...journalData,
           user_id: user.id,
         })
+
+      // 更新統計
+      if (durationMinutes && durationMinutes > 0) {
+        await updateStudyMinutes(date, durationMinutes)
+      }
     }
 
     setSaving(false)
@@ -208,6 +288,11 @@ export default function LearningJournalPage() {
     if (!deletingJournal) return
 
     setDeleteLoading(true)
+
+    // 先扣除統計
+    if (deletingJournal.duration_minutes && deletingJournal.duration_minutes > 0) {
+      await updateStudyMinutes(deletingJournal.date, -deletingJournal.duration_minutes)
+    }
 
     await supabase
       .from("journals_learning")
@@ -261,40 +346,37 @@ export default function LearningJournalPage() {
         <div className="flex items-center gap-4">
           <Link href="/dashboard/journal">
             <Button variant="ghost" size="icon">
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-gray-800">學習日誌</h1>
-            <p className="text-gray-600 mt-1">追蹤學習進度與心得</p>
+            <p className="text-gray-500">記錄學習內容與心得</p>
           </div>
         </div>
-        <Button
-          onClick={openCreateForm}
-          className="bg-green-600 hover:bg-green-700"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          新增日誌
+        <Button onClick={openCreateForm} className="bg-green-600 hover:bg-green-700">
+          <Plus className="h-4 w-4 mr-2" />
+          新增
         </Button>
       </div>
 
-      {/* 篩選列 */}
-      <div className="flex flex-wrap gap-4">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      {/* 篩選區 */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="搜尋日誌..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-10"
           />
         </div>
         <Select value={filterSubject} onValueChange={setFilterSubject}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="所有科目" />
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="全部科目" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">所有科目</SelectItem>
+            <SelectItem value="all">全部科目</SelectItem>
             {subjects.map((subject) => (
               <SelectItem key={subject.id} value={subject.id}>
                 {subject.title}
@@ -308,24 +390,16 @@ export default function LearningJournalPage() {
       {filteredJournals.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <BookMarked className="w-8 h-8 text-green-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">
-              {journals.length === 0 ? "尚未建立學習日誌" : "沒有符合條件的日誌"}
-            </h3>
-            <p className="text-gray-600 text-center mb-4">
-              {journals.length === 0
-                ? "開始記錄你的學習歷程吧！"
-                : "試試調整篩選條件"}
+            <BookMarked className="h-12 w-12 text-gray-300 mb-4" />
+            <p className="text-gray-500 mb-4">
+              {searchQuery || filterSubject !== "all"
+                ? "沒有符合條件的日誌"
+                : "還沒有學習日誌"}
             </p>
-            {journals.length === 0 && (
-              <Button
-                onClick={openCreateForm}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                新增日誌
+            {!searchQuery && filterSubject === "all" && (
+              <Button onClick={openCreateForm} className="bg-green-600 hover:bg-green-700">
+                <Plus className="h-4 w-4 mr-2" />
+                新增第一篇
               </Button>
             )}
           </CardContent>

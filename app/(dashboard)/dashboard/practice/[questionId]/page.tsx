@@ -17,6 +17,7 @@ import {
   Eye,
   RotateCcw,
 } from "lucide-react"
+import { updateDailyStudySummary } from "@/lib/study-stats"
 import type { Question, QuestionType } from "@/types/custom"
 
 export default function PracticeQuestionPage() {
@@ -94,7 +95,7 @@ export default function PracticeQuestionPage() {
   }, [questionId])
 
   // 檢查答案
-  const checkAnswer = () => {
+  const checkAnswer = async () => {
     if (!question || !questionType) return
 
     let correct = false
@@ -132,14 +133,14 @@ export default function PracticeQuestionPage() {
 
     setIsCorrect(correct)
     setSubmitted(true)
-    updateQuestionStats(correct)
+    await updateQuestionStats(correct)
   }
 
   // 更新題目統計
   const updateQuestionStats = async (correct: boolean) => {
     if (!question) return
 
-    const updates: any = {
+    const updates: Record<string, unknown> = {
       attempt_count: (question.attempt_count || 0) + 1,
       last_attempted_at: new Date().toISOString(),
     }
@@ -155,6 +156,13 @@ export default function PracticeQuestionPage() {
       .from("questions")
       .update(updates)
       .eq("id", question.id)
+
+    // 更新每日學習統計
+    await updateDailyStudySummary({
+      type: "question",
+      practiced: 1,
+      correct: correct ? 1 : 0,
+    })
   }
 
   // 切換標記複習
@@ -240,59 +248,60 @@ export default function PracticeQuestionPage() {
               onClick={toggleMarkedForReview}
               className={question.marked_for_review ? "text-amber-600" : "text-gray-400"}
             >
-              {question.marked_for_review ? "已標記複習" : "標記複習"}
+              {question.marked_for_review ? "★ 已標記" : "☆ 標記複習"}
             </Button>
           </div>
 
           {/* 題目內容 */}
           <div className="mb-6">
-            <p className="text-lg text-gray-800 whitespace-pre-wrap">{question.content}</p>
+            <p className="text-lg text-gray-800 whitespace-pre-wrap">
+              {question.content}
+            </p>
             {hasImage && (
               <img
                 src={(question as any).image_url}
                 alt="題目圖片"
-                className="mt-4 max-h-60 rounded-lg"
+                className="mt-4 max-h-64 rounded-lg"
               />
             )}
           </div>
 
-          {/* 作答區 */}
+          {/* 答題區域 */}
           <div className="space-y-4">
             {/* 是非題 */}
             {questionType.name === "true_false" && (
               <div className="flex gap-4">
-                <Button
-                  variant={userAnswer === "true" ? "default" : "outline"}
-                  className={`flex-1 h-16 text-lg ${
-                    submitted
-                      ? question.answer === "true"
-                        ? "bg-green-500 hover:bg-green-500 text-white"
-                        : userAnswer === "true"
-                        ? "bg-red-500 hover:bg-red-500 text-white"
-                        : ""
-                      : ""
-                  }`}
-                  onClick={() => !submitted && setUserAnswer("true")}
-                  disabled={submitted}
-                >
-                  ⭕ 是
-                </Button>
-                <Button
-                  variant={userAnswer === "false" ? "default" : "outline"}
-                  className={`flex-1 h-16 text-lg ${
-                    submitted
-                      ? question.answer === "false"
-                        ? "bg-green-500 hover:bg-green-500 text-white"
-                        : userAnswer === "false"
-                        ? "bg-red-500 hover:bg-red-500 text-white"
-                        : ""
-                      : ""
-                  }`}
-                  onClick={() => !submitted && setUserAnswer("false")}
-                  disabled={submitted}
-                >
-                  ❌ 非
-                </Button>
+                {[
+                  { value: "true", label: "○ 正確" },
+                  { value: "false", label: "✕ 錯誤" },
+                ].map((opt) => {
+                  const isSelected = userAnswer === opt.value
+                  const isCorrectOption = question.answer === opt.value
+                  let optionClass = ""
+
+                  if (submitted) {
+                    if (isCorrectOption) {
+                      optionClass = "border-green-500 bg-green-50"
+                    } else if (isSelected) {
+                      optionClass = "border-red-500 bg-red-50"
+                    }
+                  } else if (isSelected) {
+                    optionClass = "border-blue-500 bg-blue-50"
+                  }
+
+                  return (
+                    <button
+                      key={opt.value}
+                      className={`flex-1 p-4 border-2 rounded-lg text-center transition-colors ${optionClass} ${
+                        !submitted ? "hover:border-blue-300 cursor-pointer" : ""
+                      }`}
+                      onClick={() => !submitted && setUserAnswer(opt.value)}
+                      disabled={submitted}
+                    >
+                      <span className="text-lg">{opt.label}</span>
+                    </button>
+                  )
+                })}
               </div>
             )}
 
