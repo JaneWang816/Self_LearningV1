@@ -28,6 +28,7 @@ import {
   Lightbulb,
   Download,
   BarChart2,
+  PiggyBank,
 } from "lucide-react"
 
 // 導航項目定義
@@ -109,6 +110,10 @@ const navItems: NavItem[] = [
     href: "/dashboard/finance",
     icon: Wallet,
     module: "finance",
+    children: [
+      { title: "收支明細", href: "/dashboard/finance", icon: Wallet },
+      { title: "預算管理", href: "/dashboard/finance/budget", icon: PiggyBank },
+    ],
   },
   {
     title: "資料匯出",
@@ -192,7 +197,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex items-center h-16 px-6 border-b">
         <img src="/icons/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg" />
-        <span className="ml-3 text-xl font-bold text-gray-800">日歷 V2</span>
+        <span className="ml-3 text-xl font-bold text-gray-800">日歷 V.2</span>
       </div>
 
       {/* Navigation */}

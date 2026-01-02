@@ -41,10 +41,6 @@ interface FinanceDialogProps {
   isEdit: boolean
 }
 
-// 預設分類（fallback）
-const DEFAULT_EXPENSE_CATEGORIES = ["飲食", "交通", "娛樂", "購物", "學習", "其他"]
-const DEFAULT_INCOME_CATEGORIES = ["零用錢", "獎學金", "打工", "禮金", "其他"]
-
 export function FinanceDialog({
   open,
   onOpenChange,
@@ -96,22 +92,6 @@ export function FinanceDialog({
         const income = allCategories.filter(c => c.type === "income")
         setExpenseCategories(expense)
         setIncomeCategories(income)
-      } else {
-        // Fallback 到硬編碼的預設分類
-        setExpenseCategories(DEFAULT_EXPENSE_CATEGORIES.map((name, i) => ({
-          id: `default-expense-${i}`,
-          name,
-          type: "expense" as const,
-          icon: null,
-          is_default: true,
-        })))
-        setIncomeCategories(DEFAULT_INCOME_CATEGORIES.map((name, i) => ({
-          id: `default-income-${i}`,
-          name,
-          type: "income" as const,
-          icon: null,
-          is_default: true,
-        })))
       }
       
       setLoading(false)
@@ -121,6 +101,9 @@ export function FinanceDialog({
   }, [open])
 
   const categories = formData.type === "income" ? incomeCategories : expenseCategories
+
+  // 根據 category_id 找到對應的分類名稱（用於顯示）
+  const selectedCategory = categories.find(c => c.id === formData.category_id)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -135,7 +118,7 @@ export function FinanceDialog({
             <Label>類型</Label>
             <Select 
               value={formData.type || "expense"} 
-              onValueChange={(v) => setFormData({ ...formData, type: v, category: "" })}
+              onValueChange={(v) => setFormData({ ...formData, type: v, category_id: "", category: "" })}
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -147,16 +130,25 @@ export function FinanceDialog({
           <div className="space-y-2">
             <Label>分類 *</Label>
             <Select 
-              value={formData.category || ""} 
-              onValueChange={(v) => setFormData({ ...formData, category: v })}
+              value={formData.category_id || ""} 
+              onValueChange={(v) => {
+                const cat = categories.find(c => c.id === v)
+                setFormData({ 
+                  ...formData, 
+                  category_id: v,
+                  category: cat?.name || ""  // 同時更新 category 名稱（向後相容）
+                })
+              }}
               disabled={loading}
             >
               <SelectTrigger>
-                <SelectValue placeholder={loading ? "載入中..." : "選擇分類"} />
+                <SelectValue placeholder={loading ? "載入中..." : "選擇分類"}>
+                  {selectedCategory ? `${selectedCategory.icon || "📦"} ${selectedCategory.name}` : (loading ? "載入中..." : "選擇分類")}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.name}>
+                  <SelectItem key={c.id} value={c.id}>
                     {c.icon || "📦"} {c.name}
                   </SelectItem>
                 ))}
@@ -184,7 +176,7 @@ export function FinanceDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>取消</Button>
           <Button 
             onClick={onSave} 
-            disabled={saving || !formData.category || !formData.amount || loading}
+            disabled={saving || !formData.category_id || !formData.amount || loading}
           >
             {saving ? "儲存中..." : "儲存"}
           </Button>

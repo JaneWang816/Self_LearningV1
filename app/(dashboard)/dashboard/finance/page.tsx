@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import Link from "next/link"
 import {
   Wallet,
   Plus,
@@ -47,6 +48,8 @@ import {
   Search,
   PieChart,
   Banknote,
+  PiggyBank, 
+  Target,
 } from "lucide-react"
 
 // 分類類型
@@ -99,6 +102,8 @@ export default function FinancePage() {
   const [description, setDescription] = useState("")
   const [date, setDate] = useState(new Date().toISOString().split("T")[0])
   const [saving, setSaving] = useState(false)
+  const [budgets, setBudgets] = useState<any[]>([])
+  const [totalBudget, setTotalBudget] = useState<number | null>(null)
 
   // 刪除狀態
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -112,6 +117,20 @@ export default function FinancePage() {
 
     setUserId(user.id)
 
+    // 取得當月預算
+    const currentMonth = new Date().toISOString().slice(0, 7)
+    const { data: budgetsData } = await supabase
+      .from("budgets")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("year_month", currentMonth)
+
+    if (budgetsData) {
+      setBudgets(budgetsData)
+      const total = budgetsData.find((b: any) => b.category_id === null)
+      setTotalBudget(total ? Number(total.amount) : null)
+    }
+    
     // 分開查詢記錄、用戶分類、預設分類
     const [recordsRes, userCategoriesRes, defaultCategoriesRes, profileRes] = await Promise.all([
       supabase
@@ -442,6 +461,55 @@ export default function FinancePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 預算進度 */}
+      {totalBudget && (
+        <Card className="col-span-full">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <PiggyBank className="w-5 h-5 text-amber-600" />
+                <span className="font-medium text-gray-800">本月預算</span>
+              </div>
+              <Link href="/dashboard/finance/budget">
+                <Button variant="ghost" size="sm">
+                  管理預算
+                </Button>
+              </Link>
+            </div>
+            
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-500">
+                已支出 ${monthStats.expense.toLocaleString()} / 預算 ${totalBudget.toLocaleString()}
+              </span>
+              <span className={`text-sm font-medium ${
+                monthStats.expense > totalBudget ? "text-red-600" :
+                monthStats.expense > totalBudget * 0.8 ? "text-amber-600" :
+                "text-green-600"
+              }`}>
+                {((monthStats.expense / totalBudget) * 100).toFixed(1)}%
+              </span>
+            </div>
+            
+            <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  monthStats.expense > totalBudget ? "bg-red-500" :
+                  monthStats.expense > totalBudget * 0.8 ? "bg-amber-500" :
+                  "bg-green-500"
+                }`}
+                style={{ width: `${Math.min((monthStats.expense / totalBudget) * 100, 100)}%` }}
+              />
+            </div>
+            
+            {monthStats.expense > totalBudget && (
+              <p className="text-sm text-red-600 mt-2">
+                ⚠️ 已超支 ${(monthStats.expense - totalBudget).toLocaleString()}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* 分類統計 */}
       {categoryStats.length > 0 && (

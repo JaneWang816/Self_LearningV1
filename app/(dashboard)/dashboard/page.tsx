@@ -417,7 +417,8 @@ export default function DashboardPage() {
           if (formData.id) {
             await supabase.from("finance_records").update({
               type: formData.type,
-              category: formData.category,
+              category_id: formData.category_id,  // ← 新增
+              category: formData.category,         // 保留向後相容
               amount: parseFloat(formData.amount),
               description: formData.description,
             }).eq("id", formData.id)
@@ -425,7 +426,8 @@ export default function DashboardPage() {
             await supabase.from("finance_records").insert({
               user_id: user.id,
               type: formData.type,
-              category: formData.category,
+              category_id: formData.category_id,  // ← 新增
+              category: formData.category,         // 保留向後相容
               amount: parseFloat(formData.amount),
               description: formData.description,
               date: selectedDateKey,
