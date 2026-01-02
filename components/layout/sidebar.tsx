@@ -99,6 +99,10 @@ const navItems: NavItem[] = [
     href: "/dashboard/health",
     icon: Dumbbell,
     module: "health",
+    children: [
+      { title: "運動與數據", href: "/dashboard/health", icon: Dumbbell },
+      { title: "健康統計", href: "/dashboard/health/stats", icon: BarChart2 },
+    ],
   },
   {
     title: "收支記錄",
@@ -188,7 +192,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex items-center h-16 px-6 border-b">
         <img src="/icons/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg" />
-        <span className="ml-3 text-xl font-bold text-gray-800">日曆</span>
+        <span className="ml-3 text-xl font-bold text-gray-800">日歷 V2</span>
       </div>
 
       {/* Navigation */}

@@ -29,6 +29,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   User,
   Layers,
   Shield,
@@ -42,8 +49,23 @@ import {
   GraduationCap,
   ListTodo,
   Tag,
+  Heart,
 } from "lucide-react"
-import type { Profile, ModuleType } from "@/types/custom"
+import type { ModuleType } from "@/types/custom"
+
+// 擴展 Profile 類型
+interface ProfileExtended {
+  id: string
+  nickname: string | null
+  avatar_url: string | null
+  enabled_modules: ModuleType[] | null
+  initial_balance: number | null
+  birth_year: number | null
+  height_cm: number | null
+  gender: string | null
+  created_at: string | null
+  updated_at: string | null
+}
 
 // 模組配置
 const MODULE_CONFIG: {
@@ -104,15 +126,25 @@ const MODULE_CONFIG: {
   },
 ]
 
+// 生成年份選項 (最近 100 年)
+const currentYear = new Date().getFullYear()
+const yearOptions = Array.from({ length: 100 }, (_, i) => currentYear - i)
+
 export default function SettingsPage() {
   const router = useRouter()
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [profile, setProfile] = useState<ProfileExtended | null>(null)
   const [loading, setLoading] = useState(true)
 
   // 個人資料
   const [nickname, setNickname] = useState("")
   const [avatarUrl, setAvatarUrl] = useState("")
   const [savingProfile, setSavingProfile] = useState(false)
+
+  // 健康資料
+  const [birthYear, setBirthYear] = useState<number | null>(null)
+  const [heightCm, setHeightCm] = useState<number | null>(null)
+  const [gender, setGender] = useState<string>("")
+  const [savingHealth, setSavingHealth] = useState(false)
 
   // 模組設定
   const [enabledModules, setEnabledModules] = useState<ModuleType[]>([])
@@ -149,11 +181,14 @@ export default function SettingsPage() {
         .single()
 
       if (profileData) {
-        setProfile(profileData)
+        setProfile(profileData as ProfileExtended)
         setNickname(profileData.nickname || "")
         setAvatarUrl(profileData.avatar_url || "")
         setEnabledModules((profileData.enabled_modules as ModuleType[]) || ["journal", "habits", "tasks", "schedule"])
         setInitialBalance(profileData.initial_balance ? Number(profileData.initial_balance) : 0)
+        setBirthYear(profileData.birth_year || null)
+        setHeightCm(profileData.height_cm ? Number(profileData.height_cm) : null)
+        setGender(profileData.gender || "")
       }
 
       setLoading(false)
@@ -177,6 +212,24 @@ export default function SettingsPage() {
       .eq("id", profile.id)
 
     setSavingProfile(false)
+  }
+
+  // 儲存健康資料
+  const handleSaveHealth = async () => {
+    if (!profile) return
+
+    setSavingHealth(true)
+
+    await supabase
+      .from("profiles")
+      .update({
+        birth_year: birthYear,
+        height_cm: heightCm,
+        gender: gender || null,
+      })
+      .eq("id", profile.id)
+
+    setSavingHealth(false)
   }
 
   // 儲存期初餘額
@@ -327,6 +380,80 @@ export default function SettingsPage() {
           >
             <Save className="w-4 h-4 mr-2" />
             {savingProfile ? "儲存中..." : "儲存"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* 健康資料設定 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="w-5 h-5 text-pink-600" />
+            健康資料
+          </CardTitle>
+          <CardDescription>用於計算 BMI 和提供個人化健康建議</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>出生年份</Label>
+              <Select
+                value={birthYear?.toString() || ""}
+                onValueChange={(v) => setBirthYear(v && v !== "__clear__" ? parseInt(v) : null)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="選擇年份" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__clear__">清除設定</SelectItem>
+                  {yearOptions.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year} 年
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>身高 (公分)</Label>
+              <Input
+                type="number"
+                min="50"
+                max="250"
+                step="0.1"
+                value={heightCm || ""}
+                onChange={(e) => setHeightCm(e.target.value ? parseFloat(e.target.value) : null)}
+                placeholder="例如：165"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>性別</Label>
+              <Select 
+                value={gender || "__clear__"} 
+                onValueChange={(v) => setGender(v === "__clear__" ? "" : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="選擇性別" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__clear__">未設定</SelectItem>
+                  <SelectItem value="male">男</SelectItem>
+                  <SelectItem value="female">女</SelectItem>
+                  <SelectItem value="other">其他</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500">
+            這些資料僅用於健康統計頁面的 BMI 計算和個人化建議，不會分享給任何第三方。
+          </p>
+          <Button
+            onClick={handleSaveHealth}
+            disabled={savingHealth}
+            className="bg-pink-600 hover:bg-pink-700"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {savingHealth ? "儲存中..." : "儲存健康資料"}
           </Button>
         </CardContent>
       </Card>

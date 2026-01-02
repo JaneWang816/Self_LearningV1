@@ -39,6 +39,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import Link from "next/link"
 import {
   Dumbbell,
   Plus,
@@ -54,6 +55,7 @@ import {
   Droplets,
   Activity,
   Footprints,
+  BarChart2,
 } from "lucide-react"
 import { EXERCISE_TYPES } from "@/types/custom"
 import type { HealthExercise, HealthMetric } from "@/types/custom"
@@ -257,8 +259,10 @@ export default function HealthPage() {
       return
     }
 
+    let result
+
     if (editingMetric) {
-      await supabase
+      result = await supabase
         .from("health_metrics")
         .update({
           metric_type: metricType,
@@ -271,7 +275,7 @@ export default function HealthPage() {
         })
         .eq("id", editingMetric.id)
     } else {
-      await supabase
+      result = await supabase
         .from("health_metrics")
         .insert({
           user_id: user.id,
@@ -285,6 +289,14 @@ export default function HealthPage() {
         })
     }
 
+    // 檢查錯誤
+    if (result.error) {
+      console.error("健康數據儲存失敗:", result.error)
+      alert(`儲存失敗: ${result.error.message}`)
+      setSaving(false)
+      return
+    }
+    
     setSaving(false)
     setMetricFormOpen(false)
     fetchData()
@@ -386,6 +398,12 @@ export default function HealthPage() {
           <h1 className="text-2xl font-bold text-gray-800">健康記錄</h1>
           <p className="text-gray-600 mt-1">追蹤運動與健康數據</p>
         </div>
+        <Link href="/dashboard/health/stats">
+          <Button variant="outline" className="gap-2">
+            <BarChart2 className="w-4 h-4" />
+            健康統計
+          </Button>
+        </Link>
       </div>
 
       {/* 本週統計 */}
