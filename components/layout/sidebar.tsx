@@ -30,6 +30,7 @@ import {
   BarChart2,
   PiggyBank,
   PieChart,
+  Timer,
 } from "lucide-react"
 
 // 導航項目定義
@@ -93,6 +94,7 @@ const navItems: NavItem[] = [
       { title: "題庫練習", href: "/dashboard/practice", icon: FileQuestion },
       { title: "錯題本", href: "/dashboard/mistakes", icon: XCircle },
       { title: "記憶卡片", href: "/dashboard/flashcards", icon: Lightbulb },
+      { title: "番茄鐘", href: "/dashboard/pomodoro", icon: Timer },
       { title: "學習統計", href: "/dashboard/stats", icon: BarChart2 },
     ],
   },
