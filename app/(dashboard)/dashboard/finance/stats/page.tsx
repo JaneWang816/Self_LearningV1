@@ -76,6 +76,7 @@ interface MonthlyData {
   income: number
   expense: number
   balance: number
+  [key: string]: string | number
 }
 
 interface CategoryData {
@@ -84,12 +85,14 @@ interface CategoryData {
   icon: string
   color: string
   percent: number
+  [key: string]: string | number  // 索引簽名，讓 Recharts 相容
 }
 
 interface DailyData {
   date: string
   dateLabel: string
   expense: number
+  [key: string]: string | number
 }
 
 // 顏色常量
@@ -728,8 +731,8 @@ export default function FinanceStatsPage() {
                 <XAxis dataKey="monthLabel" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
                 <Tooltip
-                  formatter={(value: number, name: string) => [
-                    `$${value.toLocaleString()}`,
+                  formatter={(value, name) => [
+                    `$${(value ?? 0).toLocaleString()}`,
                     name === "income" ? "收入" : name === "expense" ? "支出" : "結餘"
                   ]}
                   labelFormatter={(label) => `${label}`}
@@ -776,7 +779,7 @@ export default function FinanceStatsPage() {
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value: number) => `$${value.toLocaleString()}`}
+                      formatter={(value) => `$${(value ?? 0).toLocaleString()}`}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -831,7 +834,7 @@ export default function FinanceStatsPage() {
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value: number) => `$${value.toLocaleString()}`}
+                      formatter={(value) => `$${(value ?? 0).toLocaleString()}`}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -880,7 +883,7 @@ export default function FinanceStatsPage() {
                 />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
                 <Tooltip
-                  formatter={(value: number) => [`$${value.toLocaleString()}`, "支出"]}
+                  formatter={(value) => [`$${(value ?? 0).toLocaleString()}`, "支出"]}
                 />
                 {/* 日均線 */}
                 <Line
