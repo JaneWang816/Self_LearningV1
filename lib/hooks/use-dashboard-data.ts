@@ -396,7 +396,7 @@ export function useDashboardData(selectedDate: Date) {
       .select("*")
       .eq("user_id", user.id)
       .eq("date", selectedDateKey)
-      .single()
+      .maybeSingle()
     setJournalLife(data as JournalLife | null)
   }, [selectedDateKey])
 
@@ -408,7 +408,7 @@ export function useDashboardData(selectedDate: Date) {
       .select("*")
       .eq("user_id", user.id)
       .eq("date", selectedDateKey)
-      .single()
+      .maybeSingle()
     setJournalLearning(data as JournalLearning | null)
   }, [selectedDateKey])
 
@@ -420,7 +420,7 @@ export function useDashboardData(selectedDate: Date) {
       .select("*")
       .eq("user_id", user.id)
       .eq("date", selectedDateKey)
-      .single()
+      .maybeSingle()
     setJournalReading(data as JournalReading | null)
   }, [selectedDateKey])
 
@@ -432,7 +432,7 @@ export function useDashboardData(selectedDate: Date) {
       .select("*")
       .eq("user_id", user.id)
       .eq("date", selectedDateKey)
-      .single()
+      .maybeSingle()
     setJournalGratitude(data as JournalGratitude | null)
   }, [selectedDateKey])
 

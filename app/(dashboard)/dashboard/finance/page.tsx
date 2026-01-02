@@ -50,6 +50,7 @@ import {
   Banknote,
   PiggyBank, 
   Target,
+  BarChart2,
 } from "lucide-react"
 
 // 分類類型
@@ -391,17 +392,21 @@ export default function FinancePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">收支記錄</h1>
-          <p className="text-gray-600 mt-1">管理你的收入與支出</p>
+          <p className="text-gray-600 mt-1">管理您的收入與支出</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => openCreateForm("income")}>
-            <ArrowUpCircle className="w-4 h-4 mr-2 text-green-600" />
-            收入
-          </Button>
-          <Button onClick={() => openCreateForm("expense")} className="bg-amber-600 hover:bg-amber-700">
-            <ArrowDownCircle className="w-4 h-4 mr-2" />
-            支出
-          </Button>
+          <Link href="/dashboard/finance/budget">
+            <Button variant="outline" className="gap-2">
+              <PiggyBank className="w-4 h-4" />
+              預算管理
+            </Button>
+          </Link>
+          <Link href="/dashboard/finance/stats">
+            <Button variant="outline" className="gap-2">
+              <BarChart2 className="w-4 h-4" />
+              財務統計
+            </Button>
+          </Link>
         </div>
       </div>
 

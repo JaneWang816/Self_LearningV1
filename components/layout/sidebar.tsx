@@ -29,6 +29,7 @@ import {
   Download,
   BarChart2,
   PiggyBank,
+  PieChart,
 } from "lucide-react"
 
 // 導航項目定義
@@ -113,6 +114,7 @@ const navItems: NavItem[] = [
     children: [
       { title: "收支明細", href: "/dashboard/finance", icon: Wallet },
       { title: "預算管理", href: "/dashboard/finance/budget", icon: PiggyBank },
+      { title: "財務統計", href: "/dashboard/finance/stats", icon: PieChart },
     ],
   },
   {
