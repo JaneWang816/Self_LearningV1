@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabaseClient"
 import { CalendarView, type ModuleType } from "@/components/calendar/calendar-view"
 import { useDashboardData, type JournalTravel, type DailyPlan } from "@/lib/hooks/use-dashboard-data"
 import { ModuleButtonGrid, getModuleConfig } from "@/components/dashboard/module-buttons"
-import { BookOpen, FileQuestion, AlertCircle, Layers, BarChart2 } from "lucide-react"
+import { BookOpen, FileQuestion, AlertCircle, Layers, BarChart2, Timer } from "lucide-react"
 
 // Panels
 import {
@@ -720,7 +720,7 @@ export default function DashboardPage() {
       {/* 學習平台快速入口 */}
       <div className="bg-white rounded-lg shadow-sm border p-4">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">📚 學習平台</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
           <button 
             onClick={() => router.push("/dashboard/subjects")} 
             className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 transition-all"
@@ -766,6 +766,16 @@ export default function DashboardPage() {
               <BarChart2 className="w-6 h-6 text-white" />
             </div>
             <span className="text-sm font-medium text-gray-700 mt-2">學習統計</span>
+          </button>
+
+          <button 
+            onClick={() => router.push("/dashboard/pomodoro")} 
+            className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-red-200 bg-red-50 hover:bg-red-100 hover:border-red-300 transition-all"
+          >
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-red-500">
+              <Timer className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-sm font-medium text-gray-700 mt-2">番茄鐘</span>
           </button>
         </div>
       </div>
