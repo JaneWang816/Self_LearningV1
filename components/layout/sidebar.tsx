@@ -31,6 +31,7 @@ import {
   PiggyBank,
   PieChart,
   Timer,
+  Target,
 } from "lucide-react"
 
 // 導航項目定義
@@ -47,6 +48,11 @@ const navItems: NavItem[] = [
     title: "總覽",
     href: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    title: "目標",           
+    href: "/dashboard/goals",
+    icon: Target,
   },
   {
     title: "每日行程",

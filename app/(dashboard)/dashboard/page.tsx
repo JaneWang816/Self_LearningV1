@@ -1,231 +1,289 @@
 // app/(dashboard)/dashboard/page.tsx
 "use client"
 
-import { useState, useEffect } from "react"
-import { format, addDays, addWeeks, addMonths, addYears, isBefore, parseISO } from "date-fns"
-import { zhTW } from "date-fns/locale"
+import { useState, useEffect, useCallback } from "react"
+import { format } from "date-fns"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabaseClient"
-import { CalendarView, type ModuleType } from "@/components/calendar/calendar-view"
-import { useDashboardData, type JournalTravel, type DailyPlan } from "@/lib/hooks/use-dashboard-data"
-import { ModuleButtonGrid, getModuleConfig } from "@/components/dashboard/module-buttons"
+import { CalendarView, type DayIndicators } from "@/components/calendar/calendar-view"
+import { GoalSection, type Goal } from "@/components/goals/goal-card"
+import { GoalDialog, UpdateProgressDialog } from "@/components/goals/goal-dialog"
 import { BookOpen, FileQuestion, AlertCircle, Layers, BarChart2, Timer } from "lucide-react"
-
-// Panels
-import {
-  SchedulePanel,
-  TaskPanel,
-  HabitPanel,
-  DailyPlanPanel,
-  JournalLifePanel,
-  JournalLearningPanel,
-  JournalReadingPanel,
-  JournalGratitudePanel,
-  JournalTravelPanel,
-  FinancePanel,
-  ExercisePanel,
-  HealthPanel,
-} from "@/components/dashboard/panels"
-
-// Dialogs
-import {
-  TaskDialog,
-  JournalLifeDialog,
-  JournalLearningDialog,
-  JournalReadingDialog,
-  JournalGratitudeDialog,
-  JournalTravelDialog,
-  FinanceDialog,
-  ExerciseDialog,
-  HealthDialog,
-  DailyPlanDialog,
-} from "@/components/dashboard/dialogs"
-
-import type {
-  Task,
-  FinanceRecord,
-  HealthExercise,
-  HealthMetric,
-} from "@/types/custom"
-
-type DeletableTable = 
-  | "tasks" 
-  | "finance_records" 
-  | "health_exercises" 
-  | "health_metrics"
-  | "journals_life"
-  | "journals_learning"
-  | "journals_reading"
-  | "journals_gratitude"
-  | "journals_travel"
-  | "daily_plans"
 
 export default function DashboardPage() {
   const router = useRouter()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [calendarView, setCalendarView] = useState<"month" | "week">("month")
-  const [expandedModule, setExpandedModule] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [indicators, setIndicators] = useState<DayIndicators>({})
 
-  // 使用自定義 Hook 獲取資料
-  const {
-    loading,
-    moduleLoading,
-    indicators,
-    selectedDateKey,
-    scheduleSlots,
-    tasks,
-    habits,
-    dailyPlans,
-    journalLife,
-    journalLearning,
-    journalReading,
-    journalGratitude,
-    journalTravels,
-    financeRecords,
-    exercises,
-    healthMetrics,
-    setJournalLife,
-    setJournalLearning,
-    setJournalReading,
-    setJournalGratitude,
-    fetchIndicators,
-    loadModuleData,
-    fetchTasks,
-    fetchHabits,
-    fetchDailyPlans,
-    fetchJournalLife,
-    fetchJournalLearning,
-    fetchJournalReading,
-    fetchJournalGratitude,
-    fetchJournalTravel,
-    fetchFinance,
-    fetchExercises,
-    fetchHealthMetrics,
-  } = useDashboardData(selectedDate)
-
-  // 對話框狀態
-  const [dialogType, setDialogType] = useState<string | null>(null)
-  const [formData, setFormData] = useState<Record<string, any>>({})
+  // 目標相關狀態
+  const [goals, setGoals] = useState<Goal[]>([])
+  const [goalsLoading, setGoalsLoading] = useState(true)
+  const [goalDialogOpen, setGoalDialogOpen] = useState(false)
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
+  const [updateProgressOpen, setUpdateProgressOpen] = useState(false)
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
   const [saving, setSaving] = useState(false)
-  const [photoUrls, setPhotoUrls] = useState<string[]>([])
-
-  const dateLabel = format(selectedDate, "M月d日", { locale: zhTW })
-  const selectedIndicators = indicators[selectedDateKey] || []
-
-  // 載入模組資料
-  useEffect(() => {
-    if (expandedModule) {
-      loadModuleData(expandedModule)
-    }
-  }, [selectedDate, expandedModule, loadModuleData])
 
   // ============================================
-  // 操作函數
+  // 載入指示器資料（日曆上的點點）
   // ============================================
-  const handleModuleClick = (moduleKey: string) => {
-    setExpandedModule(expandedModule === moduleKey ? null : moduleKey)
-  }
-
-  const toggleTaskComplete = async (task: Task) => {
-    const newCompletedAt = task.completed_at ? null : new Date().toISOString()
-    await supabase.from("tasks").update({ completed_at: newCompletedAt }).eq("id", task.id)
-    fetchTasks()
-    fetchIndicators()
-  }
-
-  const toggleHabitLog = async (habit: any) => {
+  const fetchIndicators = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    if (habit.log) {
-      await supabase.from("habit_logs").delete().eq("id", habit.log.id)
-    } else {
-      await supabase.from("habit_logs").insert({
-        habit_id: habit.id,
-        user_id: user.id,
-        date: selectedDateKey,
-        completed: true,
-      })
+    if (!user) {
+      setLoading(false)
+      return
     }
-    fetchHabits()
-    fetchIndicators()
-  }
 
-  const openDialog = (type: string, data?: Record<string, any>) => {
-    setDialogType(type)
-    setFormData(data || { color: "blue", recurrence_type: "none" })
-    if (type === "journal_travel") {
-      setPhotoUrls(data?.photos || [])
-    }
-  }
+    const today = new Date()
+    const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+    const endDate = new Date(today.getFullYear(), today.getMonth() + 2, 0)
+    const startStr = format(startDate, "yyyy-MM-dd")
+    const endStr = format(endDate, "yyyy-MM-dd")
 
-  const closeDialog = () => {
-    setDialogType(null)
-    setFormData({})
-    setPhotoUrls([])
-  }
+    const newIndicators: DayIndicators = {}
 
-  // ============================================
-  // 產生重複行程
-  // ============================================
-  const generateRecurringPlans = async (
-    basePlan: Record<string, any>,
-    userId: string,
-    startDate: Date
-  ) => {
-    const recurrenceType = basePlan.recurrence_type
-    if (!recurrenceType || recurrenceType === "none") return
+    // 課表
+    const { data: scheduleData } = await supabase
+      .from("schedule_slots")
+      .select("day_of_week")
+      .eq("user_id", user.id)
 
-    const endDate = basePlan.recurrence_end_date 
-      ? parseISO(basePlan.recurrence_end_date) 
-      : addYears(startDate, 1) // 預設一年
-
-    const plans: any[] = []
-    let currentDate = startDate
-
-    // 產生下一個日期
-    const getNextDate = (date: Date): Date => {
-      switch (recurrenceType) {
-        case "daily": return addDays(date, 1)
-        case "weekly": return addWeeks(date, 1)
-        case "monthly": return addMonths(date, 1)
-        case "yearly": return addYears(date, 1)
-        default: return date
+    if (scheduleData && scheduleData.length > 0) {
+      const daysWithSchedule = new Set(scheduleData.map(s => s.day_of_week))
+      let current = new Date(startDate)
+      while (current <= endDate) {
+        const dayOfWeek = current.getDay() === 0 ? 7 : current.getDay()
+        if (daysWithSchedule.has(dayOfWeek)) {
+          const dateKey = format(current, "yyyy-MM-dd")
+          if (!newIndicators[dateKey]) newIndicators[dateKey] = []
+          newIndicators[dateKey].push("schedule")
+        }
+        current.setDate(current.getDate() + 1)
       }
     }
 
-    // 產生重複行程（最多 365 筆）
-    let count = 0
-    currentDate = getNextDate(currentDate) // 從下一個週期開始
-    
-    while (isBefore(currentDate, endDate) && count < 365) {
-      plans.push({
-        user_id: userId,
-        date: format(currentDate, "yyyy-MM-dd"),
-        title: basePlan.title,
-        start_time: basePlan.start_time || null,
-        end_time: basePlan.end_time || null,
-        is_all_day: basePlan.is_all_day || false,
-        location: basePlan.location || null,
-        description: basePlan.description || null,
-        color: basePlan.color || "blue",
-        recurrence_type: recurrenceType,
-        recurrence_end_date: basePlan.recurrence_end_date || null,
-        parent_id: basePlan.id, // 指向原始行程
+    // 任務
+    const { data: tasksData } = await supabase
+      .from("tasks")
+      .select("due_date")
+      .eq("user_id", user.id)
+      .gte("due_date", startStr)
+      .lte("due_date", endStr)
+
+    if (tasksData) {
+      tasksData.forEach(task => {
+        if (task.due_date) {
+          if (!newIndicators[task.due_date]) newIndicators[task.due_date] = []
+          if (!newIndicators[task.due_date].includes("tasks")) {
+            newIndicators[task.due_date].push("tasks")
+          }
+        }
       })
-      currentDate = getNextDate(currentDate)
-      count++
     }
 
-    if (plans.length > 0) {
-      await supabase.from("daily_plans").insert(plans)
+    // 習慣打卡
+    const { data: habitsData } = await supabase
+      .from("habit_logs")
+      .select("date")
+      .eq("user_id", user.id)
+      .gte("date", startStr)
+      .lte("date", endStr)
+
+    if (habitsData) {
+      habitsData.forEach(h => {
+        if (!newIndicators[h.date]) newIndicators[h.date] = []
+        if (!newIndicators[h.date].includes("habits")) {
+          newIndicators[h.date].push("habits")
+        }
+      })
     }
-  }
+
+    // 每日行程
+    const { data: plansData } = await supabase
+      .from("daily_plans")
+      .select("date")
+      .eq("user_id", user.id)
+      .gte("date", startStr)
+      .lte("date", endStr)
+
+    if (plansData) {
+      plansData.forEach(p => {
+        if (!newIndicators[p.date]) newIndicators[p.date] = []
+        if (!newIndicators[p.date].includes("daily_plan")) {
+          newIndicators[p.date].push("daily_plan")
+        }
+      })
+    }
+
+    // 生活日誌
+    const { data: lifeJournals } = await supabase
+      .from("journals_life")
+      .select("date")
+      .eq("user_id", user.id)
+      .gte("date", startStr)
+      .lte("date", endStr)
+
+    if (lifeJournals) {
+      lifeJournals.forEach(j => {
+        if (!newIndicators[j.date]) newIndicators[j.date] = []
+        if (!newIndicators[j.date].includes("journal_life")) {
+          newIndicators[j.date].push("journal_life")
+        }
+      })
+    }
+
+    // 學習日誌
+    const { data: learningJournals } = await supabase
+      .from("journals_learning")
+      .select("date")
+      .eq("user_id", user.id)
+      .gte("date", startStr)
+      .lte("date", endStr)
+
+    if (learningJournals) {
+      learningJournals.forEach(j => {
+        if (!newIndicators[j.date]) newIndicators[j.date] = []
+        if (!newIndicators[j.date].includes("journal_learning")) {
+          newIndicators[j.date].push("journal_learning")
+        }
+      })
+    }
+
+    // 閱讀日誌
+    const { data: readingJournals } = await supabase
+      .from("journals_reading")
+      .select("date")
+      .eq("user_id", user.id)
+      .gte("date", startStr)
+      .lte("date", endStr)
+
+    if (readingJournals) {
+      readingJournals.forEach(j => {
+        if (!newIndicators[j.date]) newIndicators[j.date] = []
+        if (!newIndicators[j.date].includes("journal_reading")) {
+          newIndicators[j.date].push("journal_reading")
+        }
+      })
+    }
+
+    // 感恩日誌
+    const { data: gratitudeJournals } = await supabase
+      .from("journals_gratitude")
+      .select("date")
+      .eq("user_id", user.id)
+      .gte("date", startStr)
+      .lte("date", endStr)
+
+    if (gratitudeJournals) {
+      gratitudeJournals.forEach(j => {
+        if (!newIndicators[j.date]) newIndicators[j.date] = []
+        if (!newIndicators[j.date].includes("journal_gratitude")) {
+          newIndicators[j.date].push("journal_gratitude")
+        }
+      })
+    }
+
+    // 遊覽日誌
+    const { data: travelJournals } = await supabase
+      .from("journals_travel")
+      .select("date")
+      .eq("user_id", user.id)
+      .gte("date", startStr)
+      .lte("date", endStr)
+
+    if (travelJournals) {
+      travelJournals.forEach(j => {
+        if (!newIndicators[j.date]) newIndicators[j.date] = []
+        if (!newIndicators[j.date].includes("journal_travel")) {
+          newIndicators[j.date].push("journal_travel")
+        }
+      })
+    }
+
+    // 收支
+    const { data: financeData } = await supabase
+      .from("finance_records")
+      .select("date")
+      .eq("user_id", user.id)
+      .gte("date", startStr)
+      .lte("date", endStr)
+
+    if (financeData) {
+      financeData.forEach(f => {
+        if (!newIndicators[f.date]) newIndicators[f.date] = []
+        if (!newIndicators[f.date].includes("finance")) {
+          newIndicators[f.date].push("finance")
+        }
+      })
+    }
+
+    // 運動
+    const { data: exerciseData } = await supabase
+      .from("health_exercises")
+      .select("date")
+      .eq("user_id", user.id)
+      .gte("date", startStr)
+      .lte("date", endStr)
+
+    if (exerciseData) {
+      exerciseData.forEach(e => {
+        if (!newIndicators[e.date]) newIndicators[e.date] = []
+        if (!newIndicators[e.date].includes("exercise")) {
+          newIndicators[e.date].push("exercise")
+        }
+      })
+    }
+
+    // 健康
+    const { data: healthData } = await supabase
+      .from("health_metrics")
+      .select("date")
+      .eq("user_id", user.id)
+      .gte("date", startStr)
+      .lte("date", endStr)
+
+    if (healthData) {
+      healthData.forEach(h => {
+        if (!newIndicators[h.date]) newIndicators[h.date] = []
+        if (!newIndicators[h.date].includes("health")) {
+          newIndicators[h.date].push("health")
+        }
+      })
+    }
+
+    setIndicators(newIndicators)
+    setLoading(false)
+  }, [])
 
   // ============================================
-  // 儲存表單
+  // 載入目標資料
   // ============================================
-  const handleSave = async () => {
+  const fetchGoals = useCallback(async () => {
+    setGoalsLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setGoalsLoading(false)
+      return
+    }
+
+    const { data, error } = await supabase
+      .from("goals")
+      .select("*")
+      .eq("user_id", user.id)
+      .in("status", ["active", "paused"])
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false })
+
+    if (!error && data) {
+      setGoals(data as Goal[])
+    }
+    setGoalsLoading(false)
+  }, [])
+
+  // 儲存目標
+  const handleSaveGoal = async (goalData: Partial<Goal>) => {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -234,438 +292,102 @@ export default function DashboardPage() {
     }
 
     try {
-      switch (dialogType) {
-        case "task":
-          if (formData.id) {
-            await supabase.from("tasks").update({
-              title: formData.title,
-              description: formData.description,
-              is_important: formData.is_important || false,
-              is_urgent: formData.is_urgent || false,
-            }).eq("id", formData.id)
-          } else {
-            await supabase.from("tasks").insert({
-              user_id: user.id,
-              title: formData.title,
-              description: formData.description,
-              is_important: formData.is_important || false,
-              is_urgent: formData.is_urgent || false,
-              due_date: selectedDateKey,
-            })
-          }
-          fetchTasks()
-          break
-
-        case "daily_plan":
-          if (formData.id) {
-            // 編輯現有行程
-            await supabase.from("daily_plans").update({
-              title: formData.title,
-              start_time: formData.is_all_day ? null : formData.start_time,
-              end_time: formData.is_all_day ? null : formData.end_time,
-              is_all_day: formData.is_all_day || false,
-              location: formData.location || null,
-              description: formData.description || null,
-              color: formData.color || "blue",
-              recurrence_type: formData.recurrence_type || "none",
-              recurrence_end_date: formData.recurrence_end_date || null,
-            }).eq("id", formData.id)
-          } else {
-            // 新增行程
-            const { data: newPlan, error } = await supabase.from("daily_plans").insert({
-              user_id: user.id,
-              date: selectedDateKey,
-              title: formData.title,
-              start_time: formData.is_all_day ? null : formData.start_time,
-              end_time: formData.is_all_day ? null : formData.end_time,
-              is_all_day: formData.is_all_day || false,
-              location: formData.location || null,
-              description: formData.description || null,
-              color: formData.color || "blue",
-              recurrence_type: formData.recurrence_type || "none",
-              recurrence_end_date: formData.recurrence_end_date || null,
-            }).select().single()
-
-            // 如果有重複，產生後續行程
-            if (!error && newPlan && formData.recurrence_type && formData.recurrence_type !== "none") {
-              await generateRecurringPlans(
-                { ...formData, id: newPlan.id },
-                user.id,
-                selectedDate
-              )
-            }
-          }
-          fetchDailyPlans()
-          break
-
-        case "journal_life":
-          if (journalLife) {
-            await supabase.from("journals_life").update({
-              title: formData.title,
-              content: formData.content,
-              mood: formData.mood,
-            }).eq("id", journalLife.id)
-          } else {
-            await supabase.from("journals_life").insert({
-              user_id: user.id,
-              title: formData.title,
-              content: formData.content,
-              mood: formData.mood,
-              date: selectedDateKey,
-            })
-          }
-          fetchJournalLife()
-          break
-
-        case "journal_learning":
-          if (journalLearning) {
-            await supabase.from("journals_learning").update({
-              title: formData.title,
-              content: formData.content,
-              duration_minutes: formData.duration_minutes,
-              difficulty: formData.difficulty,
-            }).eq("id", journalLearning.id)
-          } else {
-            await supabase.from("journals_learning").insert({
-              user_id: user.id,
-              title: formData.title,
-              content: formData.content,
-              duration_minutes: formData.duration_minutes,
-              difficulty: formData.difficulty,
-              date: selectedDateKey,
-            })
-          }
-          fetchJournalLearning()
-          break
-
-        case "journal_reading":
-          if (journalReading) {
-            await supabase.from("journals_reading").update({
-              book_title: formData.book_title,
-              author: formData.author,
-              content: formData.content,
-              pages_read: formData.pages_read,
-              current_page: formData.current_page,
-              total_pages: formData.total_pages,
-              rating: formData.rating,
-              is_finished: formData.is_finished,
-            }).eq("id", journalReading.id)
-          } else {
-            await supabase.from("journals_reading").insert({
-              user_id: user.id,
-              book_title: formData.book_title,
-              author: formData.author,
-              content: formData.content,
-              pages_read: formData.pages_read,
-              current_page: formData.current_page,
-              total_pages: formData.total_pages,
-              rating: formData.rating,
-              is_finished: formData.is_finished || false,
-              date: selectedDateKey,
-            })
-          }
-          fetchJournalReading()
-          break
-
-        case "journal_gratitude":
-          if (journalGratitude) {
-            await supabase.from("journals_gratitude").update({
-              content: formData.content,
-            }).eq("id", journalGratitude.id)
-          } else {
-            await supabase.from("journals_gratitude").insert({
-              user_id: user.id,
-              content: formData.content,
-              date: selectedDateKey,
-            })
-          }
-          fetchJournalGratitude()
-          break
-
-        case "journal_travel":
-          if (formData.id) {
-            await supabase.from("journals_travel").update({
-              title: formData.title,
-              location: formData.location,
-              duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
-              content: formData.content,
-              mood: formData.mood,
-              weather: formData.weather,
-              companions: formData.companions,
-              rating: formData.rating,
-              photos: photoUrls,
-            }).eq("id", formData.id)
-          } else {
-            await supabase.from("journals_travel").insert({
-              user_id: user.id,
-              date: selectedDateKey,
-              title: formData.title,
-              location: formData.location,
-              duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
-              content: formData.content,
-              mood: formData.mood,
-              weather: formData.weather,
-              companions: formData.companions,
-              rating: formData.rating,
-              photos: photoUrls,
-            })
-          }
-          fetchJournalTravel()
-          break
-
-        case "finance":
-          if (formData.id) {
-            await supabase.from("finance_records").update({
-              type: formData.type,
-              category_id: formData.category_id,  // ← 新增
-              category: formData.category,         // 保留向後相容
-              amount: parseFloat(formData.amount),
-              description: formData.description,
-            }).eq("id", formData.id)
-          } else {
-            await supabase.from("finance_records").insert({
-              user_id: user.id,
-              type: formData.type,
-              category_id: formData.category_id,  // ← 新增
-              category: formData.category,         // 保留向後相容
-              amount: parseFloat(formData.amount),
-              description: formData.description,
-              date: selectedDateKey,
-            })
-          }
-          fetchFinance()
-          break
-
-        case "exercise":
-          if (formData.id) {
-            await supabase.from("health_exercises").update({
-              exercise_type: formData.exercise_type,
-              duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
-              calories: formData.calories ? parseInt(formData.calories) : null,
-              note: formData.note,
-            }).eq("id", formData.id)
-          } else {
-            await supabase.from("health_exercises").insert({
-              user_id: user.id,
-              exercise_type: formData.exercise_type,
-              duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
-              calories: formData.calories ? parseInt(formData.calories) : null,
-              note: formData.note,
-              date: selectedDateKey,
-            })
-          }
-          fetchExercises()
-          break
-
-      case "health":
-        if (formData.id) {
-          await supabase.from("health_metrics").update({
-            metric_type: formData.metric_type,
-            value_primary: parseFloat(formData.value_primary),
-            value_secondary: formData.value_secondary ? parseFloat(formData.value_secondary) : null,
-            value_tertiary: formData.metric_type === "blood_pressure" && formData.value_tertiary 
-              ? parseFloat(formData.value_tertiary) : null,
-            measured_time: formData.measured_time || null,
-            note: formData.note,
-          }).eq("id", formData.id)
-        } else {
-          await supabase.from("health_metrics").insert({
-            user_id: user.id,
-            metric_type: formData.metric_type,
-            value_primary: parseFloat(formData.value_primary),
-            value_secondary: formData.value_secondary ? parseFloat(formData.value_secondary) : null,
-            value_tertiary: formData.metric_type === "blood_pressure" && formData.value_tertiary 
-              ? parseFloat(formData.value_tertiary) : null,
-            measured_time: formData.measured_time || null,
-            note: formData.note,
-            date: selectedDateKey,
-          })
+      if (goalData.id) {
+        // 更新
+        const { id, ...updateData } = goalData
+        await supabase.from("goals").update(updateData).eq("id", id)
+      } else {
+        // 新增 - 確保必填欄位存在
+        if (!goalData.title || !goalData.goal_type) {
+          console.error("缺少必填欄位")
+          setSaving(false)
+          return
         }
-        fetchHealthMetrics()
-        break
+        
+        await supabase.from("goals").insert({
+          user_id: user.id,
+          title: goalData.title,
+          goal_type: goalData.goal_type,
+          description: goalData.description ?? null,
+          icon: goalData.icon ?? "🎯",
+          color: goalData.color ?? "blue",
+          start_value: goalData.start_value ?? null,
+          target_value: goalData.target_value ?? null,
+          current_value: goalData.current_value ?? null,
+          unit: goalData.unit ?? null,
+          direction: goalData.direction ?? "increase",
+          target_count: goalData.target_count ?? null,
+          current_count: goalData.current_count ?? 0,
+          target_date: goalData.target_date ?? null,
+          track_source: goalData.track_source ?? "manual",
+        })
       }
-      fetchIndicators()
+      await fetchGoals()
+      setGoalDialogOpen(false)
+      setEditingGoal(null)
     } catch (error) {
-      console.error("儲存失敗:", error)
+      console.error("儲存目標失敗:", error)
+    } finally {
+      setSaving(false)
     }
-
-    setSaving(false)
-    closeDialog()
   }
 
-  // ============================================
-  // 刪除記錄
-  // ============================================
-  const handleDelete = async (table: DeletableTable, id: string, photos?: string[]) => {
-    // 如果有照片，先刪除照片
-    if (photos && photos.length > 0) {
-      const paths = photos.map(url => url.split("/travel-photos/")[1]).filter(Boolean)
-      if (paths.length > 0) {
-        await supabase.storage.from("travel-photos").remove(paths)
+  // 更新進度
+  const handleUpdateProgress = async (goalId: string, value: number) => {
+    setSaving(true)
+    try {
+      const goal = goals.find(g => g.id === goalId)
+      if (!goal) return
+
+      let updateData: Partial<Goal> = {}
+      
+      if (goal.goal_type === "numeric") {
+        updateData.current_value = value
+        // 檢查是否達成
+        if (goal.direction === "decrease" && value <= (goal.target_value || 0)) {
+          updateData.status = "completed"
+          updateData.completed_at = new Date().toISOString()
+        } else if (goal.direction === "increase" && value >= (goal.target_value || 0)) {
+          updateData.status = "completed"
+          updateData.completed_at = new Date().toISOString()
+        }
+      } else if (goal.goal_type === "streak" || goal.goal_type === "count") {
+        updateData.current_count = value
+        // 檢查是否達成
+        if (value >= (goal.target_count || 0)) {
+          updateData.status = "completed"
+          updateData.completed_at = new Date().toISOString()
+        }
       }
-    }
 
-    // 如果是行程，也刪除所有子行程
-    if (table === "daily_plans") {
-      await supabase.from("daily_plans").delete().eq("parent_id", id)
+      await supabase.from("goals").update(updateData).eq("id", goalId)
+      await fetchGoals()
+      setUpdateProgressOpen(false)
+      setSelectedGoal(null)
+    } catch (error) {
+      console.error("更新進度失敗:", error)
+    } finally {
+      setSaving(false)
     }
-
-    await supabase.from(table).delete().eq("id", id)
-    
-    switch (table) {
-      case "tasks": fetchTasks(); break
-      case "daily_plans": fetchDailyPlans(); break
-      case "finance_records": fetchFinance(); break
-      case "health_exercises": fetchExercises(); break
-      case "health_metrics": fetchHealthMetrics(); break
-      case "journals_life": setJournalLife(null); break
-      case "journals_learning": setJournalLearning(null); break
-      case "journals_reading": setJournalReading(null); break
-      case "journals_gratitude": setJournalGratitude(null); break
-      case "journals_travel": fetchJournalTravel(); break
-    }
-    fetchIndicators()
   }
 
-  // ============================================
-  // 渲染面板
-  // ============================================
-  const renderPanel = () => {
-    if (!expandedModule) return null
+  // 開啟更新進度對話框
+  const openUpdateProgress = (goal: Goal) => {
+    setSelectedGoal(goal)
+    setUpdateProgressOpen(true)
+  }
 
-    const config = getModuleConfig(expandedModule)
-    if (!config) return null
+  // 初始載入
+  useEffect(() => {
+    fetchIndicators()
+    fetchGoals()
+  }, [fetchIndicators, fetchGoals])
 
-    switch (expandedModule) {
-      case "schedule":
-        return <SchedulePanel slots={scheduleSlots} loading={moduleLoading} panelColor={config.panelColor} />
-      
-      case "tasks":
-        return (
-          <TaskPanel
-            tasks={tasks}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onAdd={() => openDialog("task")}
-            onEdit={(task) => openDialog("task", task)}
-            onDelete={(id) => handleDelete("tasks", id)}
-            onToggleComplete={toggleTaskComplete}
-          />
-        )
-      
-      case "habits":
-        return (
-          <HabitPanel
-            habits={habits}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onToggle={toggleHabitLog}
-          />
-        )
-
-      case "daily_plan":
-        return (
-          <DailyPlanPanel
-            plans={dailyPlans}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onAdd={() => openDialog("daily_plan")}
-            onEdit={(plan) => openDialog("daily_plan", plan)}
-            onDelete={(id) => handleDelete("daily_plans", id)}
-          />
-        )
-      
-      case "journal_life":
-        return (
-          <JournalLifePanel
-            journal={journalLife}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onEdit={() => openDialog("journal_life", journalLife || {})}
-          />
-        )
-      
-      case "journal_learning":
-        return (
-          <JournalLearningPanel
-            journal={journalLearning}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onEdit={() => openDialog("journal_learning", journalLearning || {})}
-          />
-        )
-      
-      case "journal_reading":
-        return (
-          <JournalReadingPanel
-            journal={journalReading}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onEdit={() => openDialog("journal_reading", journalReading || {})}
-          />
-        )
-      
-      case "journal_gratitude":
-        return (
-          <JournalGratitudePanel
-            journal={journalGratitude}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onEdit={() => openDialog("journal_gratitude", journalGratitude || {})}
-          />
-        )
-      
-      case "journal_travel":
-        return (
-          <JournalTravelPanel
-            travels={journalTravels}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onAdd={() => openDialog("journal_travel")}
-            onEdit={(travel) => openDialog("journal_travel", travel)}
-            onDelete={(id, photos) => handleDelete("journals_travel", id, photos)}
-          />
-        )
-      
-      case "finance":
-        return (
-          <FinancePanel
-            records={financeRecords}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onAdd={() => openDialog("finance", { type: "expense" })}
-            onEdit={(record) => openDialog("finance", record)}
-            onDelete={(id) => handleDelete("finance_records", id)}
-          />
-        )
-      
-      case "exercise":
-        return (
-          <ExercisePanel
-            exercises={exercises}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onAdd={() => openDialog("exercise")}
-            onEdit={(ex) => openDialog("exercise", ex)}
-            onDelete={(id) => handleDelete("health_exercises", id)}
-          />
-        )
-      
-      case "health":
-        return (
-          <HealthPanel
-            metrics={healthMetrics}
-            loading={moduleLoading}
-            panelColor={config.panelColor}
-            onAdd={() => openDialog("health", { metric_type: "weight" })}
-            onEdit={(metric) => openDialog("health", metric)}
-            onDelete={(id) => handleDelete("health_metrics", id)}
-          />
-        )
-
-      default:
-        return null
-    }
+  // 點擊日期 → 跳轉到日期詳情頁
+  const handleSelectDate = (date: Date) => {
+    setSelectedDate(date)
+    const dateStr = format(date, "yyyy-MM-dd")
+    router.push(`/dashboard/day/${dateStr}`)
   }
 
   // ============================================
@@ -687,35 +409,20 @@ export default function DashboardPage() {
       {/* 日曆 */}
       <CalendarView
         selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
+        onSelectDate={handleSelectDate}
         indicators={indicators}
         view={calendarView}
         onViewChange={setCalendarView}
       />
 
-      {/* 選定日期詳情 */}
-      <div className="bg-white rounded-lg shadow-sm border p-4">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          📆 {format(selectedDate, "M月d日 EEEE", { locale: zhTW })}
-        </h3>
-
-        {/* 模組按鈕網格 */}
-        <ModuleButtonGrid
-          expandedModule={expandedModule}
-          selectedIndicators={selectedIndicators}
-          onModuleClick={handleModuleClick}
+      {/* 🎯 目標追蹤 */}
+      {!goalsLoading && (
+        <GoalSection
+          goals={goals}
+          onManageClick={() => router.push("/dashboard/goals")}
+          onUpdateProgress={openUpdateProgress}
         />
-
-        {/* 展開面板 */}
-        {renderPanel()}
-
-        {/* 提示文字 */}
-        {!expandedModule && (
-          <p className="text-sm text-gray-500 mt-4 text-center">
-            點擊上方按鈕查看或編輯該日的記錄
-          </p>
-        )}
-      </div>
+      )}
 
       {/* 學習平台快速入口 */}
       <div className="bg-white rounded-lg shadow-sm border p-4">
@@ -757,17 +464,6 @@ export default function DashboardPage() {
             </div>
             <span className="text-sm font-medium text-gray-700 mt-2">記憶卡片</span>
           </button>
-
-          <button 
-            onClick={() => router.push("/dashboard/stats")} 
-            className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-cyan-200 bg-cyan-50 hover:bg-cyan-100 hover:border-cyan-300 transition-all"
-          >
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-cyan-500">
-              <BarChart2 className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-sm font-medium text-gray-700 mt-2">學習統計</span>
-          </button>
-
           <button 
             onClick={() => router.push("/dashboard/pomodoro")} 
             className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-red-200 bg-red-50 hover:bg-red-100 hover:border-red-300 transition-all"
@@ -777,122 +473,34 @@ export default function DashboardPage() {
             </div>
             <span className="text-sm font-medium text-gray-700 mt-2">番茄鐘</span>
           </button>
+          <button 
+            onClick={() => router.push("/dashboard/stats")} 
+            className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 transition-all"
+          >
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-indigo-500">
+              <BarChart2 className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-sm font-medium text-gray-700 mt-2">學習統計</span>
+          </button>
         </div>
       </div>
 
-      {/* ============================================ */}
-      {/* 對話框 */}
-      {/* ============================================ */}
-      <TaskDialog
-        open={dialogType === "task"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
+      {/* 目標對話框 */}
+      <GoalDialog
+        open={goalDialogOpen}
+        onOpenChange={setGoalDialogOpen}
+        onSave={handleSaveGoal}
         saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!formData.id}
+        editGoal={editingGoal}
       />
 
-      <DailyPlanDialog
-        open={dialogType === "daily_plan"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
+      {/* 更新進度對話框 */}
+      <UpdateProgressDialog
+        open={updateProgressOpen}
+        onOpenChange={setUpdateProgressOpen}
+        goal={selectedGoal}
+        onSave={handleUpdateProgress}
         saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!formData.id}
-      />
-
-      <JournalLifeDialog
-        open={dialogType === "journal_life"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!journalLife}
-      />
-
-      <JournalLearningDialog
-        open={dialogType === "journal_learning"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!journalLearning}
-      />
-
-      <JournalReadingDialog
-        open={dialogType === "journal_reading"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!journalReading}
-      />
-
-      <JournalGratitudeDialog
-        open={dialogType === "journal_gratitude"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!journalGratitude}
-      />
-
-      <JournalTravelDialog
-        open={dialogType === "journal_travel"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        photos={photoUrls}
-        setPhotos={setPhotoUrls}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!formData.id}
-      />
-
-      <FinanceDialog
-        open={dialogType === "finance"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!formData.id}
-      />
-
-      <ExerciseDialog
-        open={dialogType === "exercise"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!formData.id}
-      />
-
-      <HealthDialog
-        open={dialogType === "health"}
-        onOpenChange={(open) => !open && closeDialog()}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        saving={saving}
-        dateLabel={dateLabel}
-        isEdit={!!formData.id}
       />
     </div>
   )
