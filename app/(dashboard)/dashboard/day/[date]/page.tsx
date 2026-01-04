@@ -565,9 +565,8 @@ export default function DayDetailPage() {
         case "journal_life":
           const lifeData = {
             content: formData.content,
-            mood: formData.mood || null,
-            weather: formData.weather || null,
-            highlight: formData.highlight || null,
+            mood: formData.mood ? parseInt(formData.mood) : null,
+            title: formData.title || null,
           }
           if (journalLife) {
             await supabase.from("journals_life").update(lifeData).eq("id", journalLife.id)
@@ -583,11 +582,11 @@ export default function DayDetailPage() {
 
         case "journal_learning":
           const learningData = {
-            subject: formData.subject || null,
             content: formData.content,
-            duration_minutes: formData.duration_minutes || null,
-            difficulty: formData.difficulty || null,
-            understanding: formData.understanding || null,
+            title: formData.title || null,
+            subject_id: formData.subject_id || null,
+            duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
+            difficulty: formData.difficulty ? parseInt(formData.difficulty) : null,
           }
           if (journalLearning) {
             await supabase.from("journals_learning").update(learningData).eq("id", journalLearning.id)
@@ -605,10 +604,12 @@ export default function DayDetailPage() {
           const readingData = {
             book_title: formData.book_title,
             author: formData.author || null,
-            pages_read: formData.pages_read || null,
+            pages_read: formData.pages_read ? parseInt(formData.pages_read) : null,
+            current_page: formData.current_page ? parseInt(formData.current_page) : null,
+            total_pages: formData.total_pages ? parseInt(formData.total_pages) : null,
             content: formData.content || null,
-            quotes: formData.quotes || null,
-            rating: formData.rating || null,
+            rating: formData.rating ? parseInt(formData.rating) : null,
+            is_finished: formData.is_finished || false,
           }
           if (journalReading) {
             await supabase.from("journals_reading").update(readingData).eq("id", journalReading.id)
@@ -703,8 +704,10 @@ export default function DayDetailPage() {
         case "health":
           const healthData = {
             metric_type: formData.metric_type,
-            value_primary: formData.value_primary,
-            value_secondary: formData.value_secondary || null,
+            value_primary: parseFloat(formData.value_primary),
+            value_secondary: formData.value_secondary ? parseFloat(formData.value_secondary) : null,
+            value_tertiary: formData.value_tertiary ? parseFloat(formData.value_tertiary) : null,
+            measured_time: formData.measured_time || null,
             note: formData.note || null,
           }
           if (formData.id) {

@@ -1,7 +1,7 @@
 // components/dashboard/dialogs/journal-travel-dialog.tsx
 "use client"
 
-import { Smile, Meh, Frown } from "lucide-react"
+import { Smile, Meh, Frown, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -155,18 +155,22 @@ export function JournalTravelDialog({
               </div>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">推薦度</Label>
+              <Label className="text-xs">推薦度 {formData.rating ? `(${formData.rating}/5)` : ""}</Label>
               <div className="flex gap-0.5">
                 {[1, 2, 3, 4, 5].map((r) => (
                   <button
                     key={r}
                     type="button"
                     onClick={() => setFormData({ ...formData, rating: r })}
-                    className={`text-lg transition-transform hover:scale-110 ${
-                      (formData.rating || 0) >= r ? "text-amber-400" : "text-gray-300"
-                    }`}
+                    className="transition-transform hover:scale-110 p-0.5"
                   >
-                    ⭐
+                    <Star 
+                      className={`w-5 h-5 transition-colors ${
+                        (formData.rating || 0) >= r 
+                          ? "fill-amber-400 text-amber-400" 
+                          : "fill-gray-200 text-gray-200"
+                      }`}
+                    />
                   </button>
                 ))}
               </div>
