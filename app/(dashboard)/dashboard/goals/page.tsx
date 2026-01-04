@@ -7,13 +7,23 @@ import { supabase } from "@/lib/supabaseClient"
 import { Button } from "@/components/ui/button"
 import { GoalCard, type Goal } from "@/components/goals/goal-card"
 import { GoalDialog, UpdateProgressDialog } from "@/components/goals/goal-dialog"
-import { Plus, ArrowLeft, Target } from "lucide-react"
+import { useGoalProgress } from "@/lib/hooks/use-goal-progress"
+import { Plus, ArrowLeft, Target, RefreshCw, BarChart3 } from "lucide-react"
+
+interface Habit {
+  id: string
+  name: string
+  icon: string
+}
 
 export default function GoalsPage() {
   const router = useRouter()
   const [goals, setGoals] = useState<Goal[]>([])
+  const [habits, setHabits] = useState<Habit[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
 
   // 對話框狀態
   const [goalDialogOpen, setGoalDialogOpen] = useState(false)
@@ -24,6 +34,26 @@ export default function GoalsPage() {
   // 篩選狀態
   const [filter, setFilter] = useState<"all" | "active" | "completed" | "paused">("all")
 
+  const { syncGoalsProgress } = useGoalProgress()
+
+  // 載入習慣列表
+  const fetchHabits = useCallback(async (uid: string) => {
+    const { data } = await supabase
+      .from("habits")
+      .select("id, title, icon")
+      .eq("user_id", uid)
+      .eq("is_active", true)
+      .order("title")
+
+    if (data) {
+      setHabits(data.map(h => ({
+        id: h.id,
+        name: h.title,  // habits 表用 title 不是 name
+        icon: h.icon || "✅"
+      })))
+    }
+  }, [])
+
   // 載入目標
   const fetchGoals = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -32,7 +62,12 @@ export default function GoalsPage() {
       return
     }
 
-    let query = supabase
+    setUserId(user.id)
+
+    // 同時載入習慣
+    fetchHabits(user.id)
+
+    const { data, error } = await supabase
       .from("goals")
       .select("*")
       .eq("user_id", user.id)
@@ -40,17 +75,40 @@ export default function GoalsPage() {
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
 
-    const { data, error } = await query
-
     if (!error && data) {
       setGoals(data as Goal[])
     }
     setLoading(false)
-  }, [])
+  }, [fetchHabits])
+
+  // 同步自動追蹤目標的進度
+  const syncProgress = useCallback(async () => {
+    if (!userId || goals.length === 0) return
+    
+    setSyncing(true)
+    try {
+      const updatedGoals = await syncGoalsProgress(goals, userId)
+      setGoals(updatedGoals)
+    } catch (error) {
+      console.error("同步進度失敗:", error)
+    } finally {
+      setSyncing(false)
+    }
+  }, [userId, goals, syncGoalsProgress])
 
   useEffect(() => {
     fetchGoals()
   }, [fetchGoals])
+
+  // 載入後自動同步進度
+  useEffect(() => {
+    if (!loading && userId && goals.length > 0) {
+      const hasAutoTrack = goals.some(g => g.track_source !== "manual" && g.status === "active")
+      if (hasAutoTrack) {
+        syncProgress()
+      }
+    }
+  }, [loading, userId]) // 只在首次載入後執行一次
 
   // 篩選後的目標
   const filteredGoals = goals.filter(goal => {
@@ -69,8 +127,9 @@ export default function GoalsPage() {
 
     try {
       if (goalData.id) {
-        const { id, ...updateData } = goalData
-        await supabase.from("goals").update(updateData).eq("id", id)
+        // 更新 - 移除不應更新的欄位
+        const { id, user_id, created_at, updated_at, ...updateFields } = goalData
+        await supabase.from("goals").update(updateFields).eq("id", id)
       } else {
         // 確保必填欄位存在
         if (!goalData.title || !goalData.goal_type) {
@@ -94,7 +153,11 @@ export default function GoalsPage() {
           target_count: goalData.target_count ?? null,
           current_count: goalData.current_count ?? 0,
           target_date: goalData.target_date ?? null,
+          period_type: goalData.period_type ?? "once",
+          period_target: goalData.period_target ?? null,
+          deadline: goalData.deadline ?? null,
           track_source: goalData.track_source ?? "manual",
+          track_config: goalData.track_config ?? null,
         })
       }
       await fetchGoals()
@@ -110,7 +173,7 @@ export default function GoalsPage() {
   // 更新狀態
   const handleUpdateStatus = async (goalId: string, status: Goal["status"]) => {
     try {
-      const updateData: Partial<Goal> = { status }
+      const updateData: Record<string, string | null> = { status }
       if (status === "completed") {
         updateData.completed_at = new Date().toISOString()
       }
@@ -140,7 +203,7 @@ export default function GoalsPage() {
       const goal = goals.find(g => g.id === goalId)
       if (!goal) return
 
-      let updateData: Partial<Goal> = {}
+      const updateData: Record<string, number | string | null> = {}
       
       if (goal.goal_type === "numeric") {
         updateData.current_value = value
@@ -214,13 +277,34 @@ export default function GoalsPage() {
           </Button>
           <h1 className="text-2xl font-bold text-gray-800">🎯 目標管理</h1>
         </div>
-        <Button onClick={() => {
-          setEditingGoal(null)
-          setGoalDialogOpen(true)
-        }} className="gap-2">
-          <Plus className="w-4 h-4" />
-          新增目標
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => router.push("/dashboard/goals/stats")}
+            className="gap-2"
+          >
+            <BarChart3 className="w-4 h-4" />
+            統計
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={syncProgress}
+            disabled={syncing}
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "同步中..." : "同步進度"}
+          </Button>
+          <Button onClick={() => {
+            setEditingGoal(null)
+            setGoalDialogOpen(true)
+          }} className="gap-2">
+            <Plus className="w-4 h-4" />
+            新增目標
+          </Button>
+        </div>
       </div>
 
       {/* 統計卡片 */}
@@ -282,6 +366,7 @@ export default function GoalsPage() {
               onDelete={handleDelete}
               onUpdateStatus={handleUpdateStatus}
               onUpdateProgress={openUpdateProgress}
+              onViewStats={(g) => router.push(`/dashboard/goals/stats?id=${g.id}`)}
             />
           ))}
         </div>
@@ -297,6 +382,7 @@ export default function GoalsPage() {
         onSave={handleSaveGoal}
         saving={saving}
         editGoal={editingGoal}
+        habits={habits}
       />
 
       <UpdateProgressDialog

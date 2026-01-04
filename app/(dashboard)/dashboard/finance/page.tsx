@@ -251,12 +251,13 @@ export default function FinancePage() {
   // 分類統計
   const categoryStats = useMemo(() => {
     const monthRecords = filteredRecords.filter((r) => r.type === "expense")
-    const categoryMap = new Map<string, { name: string; icon: string; amount: number }>()
+    const categoryMap = new Map<string, { id: string; name: string; icon: string; amount: number }>()
 
     monthRecords.forEach((r) => {
       const cat = r.finance_categories
       const key = cat?.id || r.category
       const current = categoryMap.get(key) || {
+        id: key,
         name: cat?.name || r.category,
         icon: cat?.icon || "📦",
         amount: 0,
@@ -530,7 +531,7 @@ export default function FinancePage() {
               {categoryStats.map((stat) => {
                 const percentage = Math.round((stat.amount / monthStats.expense) * 100) || 0
                 return (
-                  <div key={stat.name} className="flex items-center gap-3">
+                  <div key={stat.id} className="flex items-center gap-3">
                     <span className="text-lg">{stat.icon}</span>
                     <span className="text-sm text-gray-700 w-16">{stat.name}</span>
                     <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">

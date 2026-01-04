@@ -8,7 +8,14 @@ import { supabase } from "@/lib/supabaseClient"
 import { CalendarView, type DayIndicators } from "@/components/calendar/calendar-view"
 import { GoalSection, type Goal } from "@/components/goals/goal-card"
 import { GoalDialog, UpdateProgressDialog } from "@/components/goals/goal-dialog"
+import { useGoalProgress } from "@/lib/hooks/use-goal-progress"
 import { BookOpen, FileQuestion, AlertCircle, Layers, BarChart2, Timer } from "lucide-react"
+
+interface Habit {
+  id: string
+  name: string
+  icon: string
+}
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -19,12 +26,16 @@ export default function DashboardPage() {
 
   // 目標相關狀態
   const [goals, setGoals] = useState<Goal[]>([])
+  const [habits, setHabits] = useState<Habit[]>([])
   const [goalsLoading, setGoalsLoading] = useState(true)
   const [goalDialogOpen, setGoalDialogOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [updateProgressOpen, setUpdateProgressOpen] = useState(false)
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
   const [saving, setSaving] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+
+  const { syncGoalsProgress } = useGoalProgress()
 
   // ============================================
   // 載入指示器資料（日曆上的點點）
@@ -268,6 +279,25 @@ export default function DashboardPage() {
       return
     }
 
+    setUserId(user.id)
+
+    // 載入習慣列表（供目標對話框使用）
+    const { data: habitsData } = await supabase
+      .from("habits")
+      .select("id, title, icon")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .order("title")
+
+    if (habitsData) {
+      setHabits(habitsData.map(h => ({
+        id: h.id,
+        name: h.title,  // habits 表用 title 不是 name
+        icon: h.icon || "✅"
+      })))
+    }
+
+    // 載入目標
     const { data, error } = await supabase
       .from("goals")
       .select("*")
@@ -277,10 +307,19 @@ export default function DashboardPage() {
       .order("created_at", { ascending: false })
 
     if (!error && data) {
-      setGoals(data as Goal[])
+      // 同步自動追蹤目標的進度
+      const goalsData = data as Goal[]
+      const hasAutoTrack = goalsData.some(g => g.track_source !== "manual" && g.status === "active")
+      
+      if (hasAutoTrack) {
+        const updatedGoals = await syncGoalsProgress(goalsData, user.id)
+        setGoals(updatedGoals)
+      } else {
+        setGoals(goalsData)
+      }
     }
     setGoalsLoading(false)
-  }, [])
+  }, [syncGoalsProgress])
 
   // 儲存目標
   const handleSaveGoal = async (goalData: Partial<Goal>) => {
@@ -293,9 +332,9 @@ export default function DashboardPage() {
 
     try {
       if (goalData.id) {
-        // 更新
-        const { id, ...updateData } = goalData
-        await supabase.from("goals").update(updateData).eq("id", id)
+        // 更新 - 移除 id 後更新
+        const { id, user_id, created_at, updated_at, ...updateFields } = goalData
+        await supabase.from("goals").update(updateFields).eq("id", id)
       } else {
         // 新增 - 確保必填欄位存在
         if (!goalData.title || !goalData.goal_type) {
@@ -319,7 +358,11 @@ export default function DashboardPage() {
           target_count: goalData.target_count ?? null,
           current_count: goalData.current_count ?? 0,
           target_date: goalData.target_date ?? null,
+          period_type: goalData.period_type ?? "once",
+          period_target: goalData.period_target ?? null,
+          deadline: goalData.deadline ?? null,
           track_source: goalData.track_source ?? "manual",
+          track_config: goalData.track_config ?? null,
         })
       }
       await fetchGoals()
@@ -339,7 +382,7 @@ export default function DashboardPage() {
       const goal = goals.find(g => g.id === goalId)
       if (!goal) return
 
-      let updateData: Partial<Goal> = {}
+      const updateData: Record<string, number | string | null> = {}
       
       if (goal.goal_type === "numeric") {
         updateData.current_value = value
@@ -492,6 +535,7 @@ export default function DashboardPage() {
         onSave={handleSaveGoal}
         saving={saving}
         editGoal={editingGoal}
+        habits={habits}
       />
 
       {/* 更新進度對話框 */}

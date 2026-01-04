@@ -22,8 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Calendar, TrendingUp, TrendingDown, Flame, Target } from "lucide-react"
+import { Calendar, TrendingUp, TrendingDown, Flame, Target, Link2, Clock, Repeat } from "lucide-react"
 import type { Goal } from "./goal-card"
+import { TRACK_SOURCE_OPTIONS, type TrackConfig } from "@/lib/hooks/use-goal-progress"
 
 // 目標類型選項
 const GOAL_TYPES = [
@@ -48,12 +49,20 @@ const COLORS = [
 // 常用圖示
 const ICONS = ["🎯", "📚", "💪", "🏃", "💰", "📝", "🎓", "❤️", "🌟", "🔥", "✅", "📅", "🎉", "🏆", "💡", "🌱"]
 
+// 習慣選項（從 props 傳入）
+interface Habit {
+  id: string
+  name: string
+  icon: string
+}
+
 interface GoalDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSave: (goalData: Partial<Goal>) => void
   saving: boolean
   editGoal?: Goal | null
+  habits?: Habit[]  // 可選的習慣列表
 }
 
 export function GoalDialog({ 
@@ -61,7 +70,8 @@ export function GoalDialog({
   onOpenChange, 
   onSave, 
   saving,
-  editGoal 
+  editGoal,
+  habits = [],
 }: GoalDialogProps) {
   const isEdit = !!editGoal
 
@@ -85,6 +95,25 @@ export function GoalDialog({
   // 連續/累計型
   const [targetCount, setTargetCount] = useState(editGoal?.target_count?.toString() || "")
 
+  // 週期設定
+  const [periodType, setPeriodType] = useState<"once" | "monthly" | "yearly">(editGoal?.period_type || "once")
+  const [periodTarget, setPeriodTarget] = useState(editGoal?.period_target?.toString() || "")
+  const [deadline, setDeadline] = useState(editGoal?.deadline || "")
+
+  // 追蹤來源
+  const [trackSource, setTrackSource] = useState(editGoal?.track_source || "manual")
+  const [selectedHabitId, setSelectedHabitId] = useState<string>(
+    (editGoal?.track_config as TrackConfig)?.habit_id || ""
+  )
+  const [trackTargetValue, setTrackTargetValue] = useState<string>(
+    (editGoal?.track_config as TrackConfig)?.target_value?.toString() || ""
+  )
+
+  // 根據目標類型過濾可用的追蹤來源
+  const availableTrackSources = TRACK_SOURCE_OPTIONS.filter(
+    opt => opt.goalTypes.includes(goalType)
+  )
+
   // 重置表單
   const resetForm = () => {
     setGoalType("countdown")
@@ -99,6 +128,12 @@ export function GoalDialog({
     setUnit("")
     setDirection("increase")
     setTargetCount("")
+    setPeriodType("once")
+    setPeriodTarget("")
+    setDeadline("")
+    setTrackSource("manual")
+    setSelectedHabitId("")
+    setTrackTargetValue("")
   }
 
   // 當 editGoal 變更時更新表單
@@ -116,38 +151,74 @@ export function GoalDialog({
       setUnit(editGoal.unit || "")
       setDirection(editGoal.direction || "increase")
       setTargetCount(editGoal.target_count?.toString() || "")
+      setPeriodType(editGoal.period_type || "once")
+      setPeriodTarget(editGoal.period_target?.toString() || "")
+      setDeadline(editGoal.deadline || "")
+      setTrackSource(editGoal.track_source || "manual")
+      const config = editGoal.track_config as TrackConfig
+      setSelectedHabitId(config?.habit_id || "")
+      setTrackTargetValue(config?.target_value?.toString() || "")
     } else {
       resetForm()
     }
   }, [editGoal])
 
+  // 當目標類型改變時，重置追蹤來源
+  useEffect(() => {
+    const available = TRACK_SOURCE_OPTIONS.filter(opt => opt.goalTypes.includes(goalType))
+    if (!available.find(opt => opt.value === trackSource)) {
+      setTrackSource("manual")
+    }
+  }, [goalType, trackSource])
+
   // 處理儲存
   const handleSave = () => {
+    // 建立追蹤設定
+    const trackConfig: TrackConfig = {}
+    if (trackSource === "habit" && selectedHabitId) {
+      trackConfig.habit_id = selectedHabitId
+    }
+    if ((trackSource === "water_days" || trackSource === "sleep_days") && trackTargetValue) {
+      trackConfig.target_value = parseFloat(trackTargetValue)
+    }
+    trackConfig.start_date = format(new Date(), "yyyy-MM-dd")
+
     const goalData: Partial<Goal> = {
       title,
       description: description || null,
       icon,
       color,
       goal_type: goalType as Goal["goal_type"],
-      track_source: "manual",
+      track_source: trackSource,
+      track_config: Object.keys(trackConfig).length > 0 ? (trackConfig as Goal["track_config"]) : null,
+      period_type: periodType,
+      period_target: periodTarget ? parseFloat(periodTarget) : null,
+      deadline: deadline || null,
     }
 
     switch (goalType) {
       case "countdown":
         goalData.target_date = targetDate || null
+        goalData.period_type = "once"  // 倒數型強制為單次
         break
       case "numeric":
         goalData.start_value = startValue ? parseFloat(startValue) : null
         goalData.target_value = targetValue ? parseFloat(targetValue) : null
-        goalData.current_value = currentValue ? parseFloat(currentValue) : (startValue ? parseFloat(startValue) : null)
+        goalData.current_value = trackSource === "manual" 
+          ? (currentValue ? parseFloat(currentValue) : (startValue ? parseFloat(startValue) : null))
+          : null  // 自動追蹤的由系統計算
         goalData.unit = unit || null
         goalData.direction = direction
         break
       case "streak":
+        goalData.target_count = targetCount ? parseInt(targetCount) : null
+        goalData.current_count = trackSource === "manual" ? (editGoal?.current_count || 0) : 0
+        goalData.period_type = "once"  // 連續型強制為單次
+        break
       case "count":
         goalData.target_count = targetCount ? parseInt(targetCount) : null
-        goalData.current_count = editGoal?.current_count || 0
-        goalData.unit = goalType === "count" ? (unit || "次") : null
+        goalData.current_count = trackSource === "manual" ? (editGoal?.current_count || 0) : 0
+        goalData.unit = unit || "次"
         break
     }
 
@@ -275,6 +346,68 @@ export function GoalDialog({
             </div>
           </div>
 
+          {/* 追蹤來源（非倒數型才顯示） */}
+          {goalType !== "countdown" && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Link2 className="w-4 h-4" />
+                資料來源
+              </Label>
+              <Select value={trackSource} onValueChange={setTrackSource}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTrackSources.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* 習慣選擇 */}
+              {trackSource === "habit" && habits.length > 0 && (
+                <div className="mt-2">
+                  <Label className="text-sm">選擇習慣</Label>
+                  <Select value={selectedHabitId} onValueChange={setSelectedHabitId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="選擇要追蹤的習慣" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {habits.map((habit) => (
+                        <SelectItem key={habit.id} value={habit.id}>
+                          {habit.icon} {habit.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* 飲水/睡眠達標值 */}
+              {(trackSource === "water_days" || trackSource === "sleep_days") && (
+                <div className="mt-2">
+                  <Label className="text-sm">
+                    {trackSource === "water_days" ? "每日飲水目標 (ml)" : "每日睡眠目標 (小時)"}
+                  </Label>
+                  <Input
+                    type="number"
+                    value={trackTargetValue}
+                    onChange={(e) => setTrackTargetValue(e.target.value)}
+                    placeholder={trackSource === "water_days" ? "2000" : "7"}
+                  />
+                </div>
+              )}
+
+              {trackSource !== "manual" && (
+                <p className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                  💡 系統會自動從「{availableTrackSources.find(s => s.value === trackSource)?.label}」計算進度
+                </p>
+              )}
+            </div>
+          )}
+
           {/* 根據目標類型顯示不同欄位 */}
           {goalType === "countdown" && (
             <div className="space-y-2">
@@ -377,6 +510,70 @@ export function GoalDialog({
                 </div>
               )}
             </>
+          )}
+
+          {/* 週期設定（非倒數和連續型） */}
+          {(goalType === "numeric" || goalType === "count") && (
+            <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
+              <Label className="flex items-center gap-2">
+                <Repeat className="w-4 h-4" />
+                週期設定
+              </Label>
+              <Select value={periodType} onValueChange={(v) => setPeriodType(v as "once" | "monthly" | "yearly")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="once">單次目標</SelectItem>
+                  <SelectItem value="monthly">每月重複</SelectItem>
+                  <SelectItem value="yearly">每年重複</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {periodType !== "once" && (
+                <div className="space-y-2 mt-2">
+                  <Label className="text-sm">
+                    {periodType === "monthly" ? "每月目標" : "每年目標"}
+                    {goalType === "numeric" && unit ? ` (${unit})` : ""}
+                    {goalType === "count" ? ` (${unit || "次"})` : ""}
+                  </Label>
+                  <Input
+                    type="number"
+                    value={periodTarget}
+                    onChange={(e) => setPeriodTarget(e.target.value)}
+                    placeholder={
+                      goalType === "numeric" 
+                        ? (periodType === "monthly" ? "例：每月減 1" : "例：每年存 60000")
+                        : (periodType === "monthly" ? "例：每月 20 次" : "例：每年 100 次")
+                    }
+                  />
+                  <p className="text-xs text-gray-500">
+                    {periodType === "monthly" 
+                      ? "系統會每月自動計算當月進度" 
+                      : "系統會每年自動計算當年進度"}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 截止日期（非倒數型） */}
+          {goalType !== "countdown" && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                截止日期（選填）
+              </Label>
+              <Input
+                type="date"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                min={format(new Date(), "yyyy-MM-dd")}
+              />
+              <p className="text-xs text-gray-500">
+                設定截止日期後，卡片會顯示剩餘天數提醒
+              </p>
+            </div>
           )}
 
           {/* 描述 */}

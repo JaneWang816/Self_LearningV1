@@ -1,10 +1,13 @@
 // components/goals/goal-card.tsx
 "use client"
 
-import { differenceInDays, parseISO, format } from "date-fns"
+import { differenceInDays, parseISO, format, startOfMonth, endOfMonth, startOfYear, endOfYear, isAfter, isBefore } from "date-fns"
 import { zhTW } from "date-fns/locale"
-import { Target, TrendingUp, TrendingDown, Flame, Calendar, Pencil, Trash2, CheckCircle, Pause, Play } from "lucide-react"
+import { Target, TrendingUp, TrendingDown, Flame, Calendar, Pencil, Trash2, CheckCircle, Pause, Play, Clock, Repeat, BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+
+// Json 類型（與 Supabase 兼容）
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 // 目標類型
 export interface Goal {
@@ -23,8 +26,10 @@ export interface Goal {
   target_count: number | null
   current_count: number | null
   target_date: string | null
+  period_type: "once" | "monthly" | "yearly"
+  period_target: number | null
   track_source: string
-  track_config: Record<string, any> | null
+  track_config: Json | null
   started_at: string
   deadline: string | null
   status: "active" | "completed" | "paused" | "archived"
@@ -41,6 +46,7 @@ interface GoalCardProps {
   onDelete?: (id: string) => void
   onUpdateStatus?: (id: string, status: Goal["status"]) => void
   onUpdateProgress?: (goal: Goal) => void
+  onViewStats?: (goal: Goal) => void
   compact?: boolean
 }
 
@@ -62,6 +68,7 @@ export function GoalCard({
   onDelete, 
   onUpdateStatus,
   onUpdateProgress,
+  onViewStats,
   compact = false 
 }: GoalCardProps) {
   const colors = colorConfig[goal.color] || colorConfig.blue
@@ -93,8 +100,27 @@ export function GoalCard({
     }
   }
 
+  // 格式化數值（避免浮點數精度問題）
+  const formatNumber = (num: number | null | undefined): string => {
+    if (num === null || num === undefined) return "0"
+    // 如果是整數，直接顯示
+    if (Number.isInteger(num)) return num.toString()
+    // 否則最多顯示 2 位小數，並移除尾部的 0
+    return parseFloat(num.toFixed(2)).toString()
+  }
+
   // 取得顯示文字
   const getStatusText = (): string => {
+    // 週期性目標顯示當期進度
+    if (goal.period_type !== "once" && goal.period_target) {
+      const periodLabel = goal.period_type === "monthly" ? "本月" : "今年"
+      if (goal.goal_type === "numeric") {
+        return `${periodLabel} ${formatNumber(goal.current_value)} / ${formatNumber(goal.period_target)} ${goal.unit || ""}`
+      } else if (goal.goal_type === "count") {
+        return `${periodLabel} ${goal.current_count || 0} / ${formatNumber(goal.period_target)} ${goal.unit || "次"}`
+      }
+    }
+
     switch (goal.goal_type) {
       case "countdown":
         if (!goal.target_date) return "未設定日期"
@@ -109,7 +135,7 @@ export function GoalCard({
           ? goal.current_value - goal.target_value
           : goal.target_value - goal.current_value
         if (diff <= 0) return "已達成！"
-        return `還差 ${Math.abs(diff)} ${goal.unit || ""}`
+        return `還差 ${formatNumber(Math.abs(diff))} ${goal.unit || ""}`
       
       case "streak":
         return `${goal.current_count || 0}/${goal.target_count} 天`
@@ -122,26 +148,75 @@ export function GoalCard({
     }
   }
 
+  // 取得追蹤來源名稱
+  const getTrackSourceLabel = (): string => {
+    const labels: Record<string, string> = {
+      manual: "手動更新",
+      habit: "習慣打卡",
+      weight: "體重記錄",
+      finance_savings: "累計儲蓄",
+      finance_income: "累計收入",
+      finance_expense: "控制支出",
+      exercise_count: "運動次數",
+      exercise_minutes: "運動時間",
+      reading_books: "讀完書籍",
+      water_days: "飲水達標",
+      sleep_days: "睡眠達標",
+    }
+    return labels[goal.track_source] || "手動更新"
+  }
+
+  // 取得週期標籤
+  const getPeriodLabel = (): string | null => {
+    if (goal.period_type === "once") return null
+    return goal.period_type === "monthly" ? "🔄 每月" : "🔄 每年"
+  }
+
+  // 取得截止日期文字
+  const getDeadlineText = (): string | null => {
+    if (!goal.deadline) return null
+    const deadlineDate = parseISO(goal.deadline)
+    const daysLeft = differenceInDays(deadlineDate, new Date())
+    if (daysLeft < 0) return "已過期"
+    if (daysLeft === 0) return "今天截止"
+    if (daysLeft <= 7) return `${daysLeft} 天後截止`
+    return `截止 ${format(deadlineDate, "M/d")}`
+  }
+
   // 取得子標題
   const getSubtitle = (): string => {
-    switch (goal.goal_type) {
-      case "countdown":
-        if (!goal.target_date) return ""
-        return format(parseISO(goal.target_date), "M月d日 EEEE", { locale: zhTW })
-      
-      case "numeric":
-        if (goal.current_value === null || goal.target_value === null) return ""
-        return `${goal.current_value} → ${goal.target_value} ${goal.unit || ""}`
-      
-      case "streak":
-        return goal.track_source !== "manual" ? "自動追蹤" : "手動記錄"
-      
-      case "count":
-        return goal.track_source !== "manual" ? "自動追蹤" : "手動記錄"
-      
-      default:
-        return ""
+    const parts: string[] = []
+    
+    // 追蹤來源
+    if (goal.track_source !== "manual") {
+      parts.push(`📊 ${getTrackSourceLabel()}`)
     }
+    
+    // 週期
+    const periodLabel = getPeriodLabel()
+    if (periodLabel) {
+      parts.push(periodLabel)
+    }
+    
+    // 截止日期
+    const deadlineText = getDeadlineText()
+    if (deadlineText && goal.goal_type !== "countdown") {
+      parts.push(`⏰ ${deadlineText}`)
+    }
+    
+    // 數值進度（非週期）
+    if (goal.goal_type === "numeric" && goal.period_type === "once") {
+      if (goal.current_value !== null && goal.target_value !== null) {
+        parts.unshift(`${formatNumber(goal.current_value)} → ${formatNumber(goal.target_value)} ${goal.unit || ""}`)
+      }
+    }
+    
+    // 倒數日期
+    if (goal.goal_type === "countdown" && goal.target_date) {
+      return format(parseISO(goal.target_date), "M月d日 EEEE", { locale: zhTW })
+    }
+    
+    return parts.join(" • ") || "手動記錄"
   }
 
   // 取得圖示
@@ -239,6 +314,18 @@ export function GoalCard({
 
         {/* 操作按鈕 */}
         <div className="flex items-center gap-1">
+          {/* 統計按鈕（僅自動追蹤目標顯示） */}
+          {goal.track_source !== "manual" && onViewStats && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-blue-600"
+              onClick={() => onViewStats(goal)}
+              title="查看統計"
+            >
+              <BarChart3 className="w-4 h-4" />
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="icon" 
