@@ -356,13 +356,13 @@ export function useGoalProgress() {
 
           // 檢查是否達成
           let isCompleted = false
-          if (goal.goal_type === "numeric" && progress.currentValue !== null) {
+          if (goal.goal_type === "numeric" && progress.currentValue !== null && progress.currentValue !== undefined) {
             if (goal.direction === "decrease" && progress.currentValue <= (goal.target_value || 0)) {
               isCompleted = true
             } else if (goal.direction === "increase" && progress.currentValue >= (goal.target_value || 0)) {
               isCompleted = true
             }
-          } else if ((goal.goal_type === "streak" || goal.goal_type === "count") && progress.currentCount !== null) {
+          } else if ((goal.goal_type === "streak" || goal.goal_type === "count") && progress.currentCount !== null && progress.currentCount !== undefined) {
             if (progress.currentCount >= (goal.target_count || 0)) {
               isCompleted = true
             }

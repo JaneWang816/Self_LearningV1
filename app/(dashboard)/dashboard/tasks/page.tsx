@@ -236,7 +236,7 @@ export default function TasksPage() {
       .from("tasks")
       .select("*")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
+      .order("due_date", { ascending: true })
 
     if (data) {
       setTasks(data as TaskWithRecurrence[])
