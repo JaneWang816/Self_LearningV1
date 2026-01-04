@@ -168,22 +168,30 @@ export function useGoalProgress() {
     metric: "count" | "minutes",
     startDate?: string
   ): Promise<number> => {
-    let query = supabase
-      .from("health_exercises")
-      .select(metric === "count" ? "id" : "duration_minutes")
-      .eq("user_id", userId)
-
-    if (startDate) {
-      query = query.gte("date", startDate)
-    }
-
-    const { data } = await query
-
-    if (!data) return 0
-
     if (metric === "count") {
-      return data.length
+      let query = supabase
+        .from("health_exercises")
+        .select("id", { count: "exact" })
+        .eq("user_id", userId)
+
+      if (startDate) {
+        query = query.gte("date", startDate)
+      }
+
+      const { count } = await query
+      return count || 0
     } else {
+      let query = supabase
+        .from("health_exercises")
+        .select("duration_minutes")
+        .eq("user_id", userId)
+
+      if (startDate) {
+        query = query.gte("date", startDate)
+      }
+
+      const { data } = await query
+      if (!data) return 0
       return data.reduce((sum, r) => sum + (r.duration_minutes || 0), 0)
     }
   }, [])
