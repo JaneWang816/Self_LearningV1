@@ -667,6 +667,7 @@ export default function DayDetailPage() {
           const financeData = {
             type: formData.type,
             amount: formData.amount,
+            category_id: formData.category_id || null,
             category: formData.category || null,
             description: formData.description || null,
           }

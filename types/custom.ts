@@ -1,10 +1,10 @@
 // types/custom.ts
-// è‡ªå®šç¾©é¡žåž‹èˆ‡ä¾¿åˆ©é¡žåž‹åˆ¥å
+// 自定義類型與便利類型別名
 
 import type { Tables, TablesInsert, TablesUpdate } from "./database.types"
 
 // ============================================
-// æ¨¡çµ„é¡žåž‹
+// 模組類型
 // ============================================
 export type ModuleType = 
   | 'journal' 
@@ -16,7 +16,7 @@ export type ModuleType =
   | 'study'
 
 // ============================================
-// ä¾¿åˆ©é¡žåž‹åˆ¥å - Row (è®€å–)
+// 便利類型別名 - Row (讀取)
 // ============================================
 export type Profile = Tables<'profiles'>
 export type Task = Tables<'tasks'>
@@ -81,7 +81,7 @@ export type NoteLink = {
   created_at: string
 }
 
-// éŠè¦½æ—¥èªŒï¼ˆæ‰‹å‹•å®šç¾©ï¼Œå› ç‚º database.types å¯èƒ½å°šæœªæ›´æ–°ï¼‰
+// 遊覽日誌
 export type JournalTravel = {
   id: string
   user_id: string
@@ -99,7 +99,7 @@ export type JournalTravel = {
   updated_at: string
 }
 
-// æ¯æ—¥è¡Œç¨‹ï¼ˆæ‰‹å‹•å®šç¾©ï¼‰
+// 每日行程
 export type DailyPlan = {
   id: string
   user_id: string
@@ -119,7 +119,7 @@ export type DailyPlan = {
 }
 
 // ============================================
-// ä¾¿åˆ©é¡žåž‹åˆ¥å - Insert (æ–°å¢ž)
+// 便利類型別名 - Insert (新增)
 // ============================================
 export type TaskInsert = TablesInsert<'tasks'>
 export type HabitInsert = TablesInsert<'habits'>
@@ -133,15 +133,11 @@ export type HealthExerciseInsert = TablesInsert<'health_exercises'>
 export type HealthMetricInsert = TablesInsert<'health_metrics'>
 export type FlashcardInsert = TablesInsert<'flashcards'>
 export type DeckInsert = TablesInsert<'decks'>
-
-// éŠè¦½æ—¥èªŒ Insert
 export type JournalTravelInsert = Omit<JournalTravel, 'id' | 'created_at' | 'updated_at'>
-
-// æ¯æ—¥è¡Œç¨‹ Insert
 export type DailyPlanInsert = Omit<DailyPlan, 'id' | 'created_at' | 'updated_at'>
 
 // ============================================
-// ä¾¿åˆ©é¡žåž‹åˆ¥å - Update (æ›´æ–°)
+// 便利類型別名 - Update (更新)
 // ============================================
 export type TaskUpdate = TablesUpdate<'tasks'>
 export type HabitUpdate = TablesUpdate<'habits'>
@@ -155,11 +151,7 @@ export type HealthExerciseUpdate = TablesUpdate<'health_exercises'>
 export type HealthMetricUpdate = TablesUpdate<'health_metrics'>
 export type FlashcardUpdate = TablesUpdate<'flashcards'>
 export type DeckUpdate = TablesUpdate<'decks'>
-
-// éŠè¦½æ—¥èªŒ Update
 export type JournalTravelUpdate = Partial<Omit<JournalTravel, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
-
-// æ¯æ—¥è¡Œç¨‹ Update
 export type DailyPlanUpdate = Partial<Omit<DailyPlan, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
 
 // 單元筆記 Insert/Update
@@ -170,32 +162,32 @@ export type UnitNoteUpdate = Partial<Omit<UnitNote, 'id' | 'user_id' | 'unit_id'
 export type NoteLinkInsert = Omit<NoteLink, 'id' | 'created_at'>
 
 // ============================================
-// æ“´å±•é¡žåž‹ï¼ˆå«é¡å¤–æ¬„ä½ï¼‰
+// 擴展類型（含額外欄位）
 // ============================================
 
-// ç¿’æ…£å«ä»Šæ—¥æ‰“å¡ç‹€æ…‹
+// 習慣含今日打卡狀態
 export type HabitWithTodayLog = Habit & {
   todayLog?: HabitLog | null
 }
 
-// ä»»å‹™å«ä¾‹è¡Œä»»å‹™æ¬„ä½
+// 任務含例行任務欄位
 export type TaskWithRecurrence = Task
 
-// å¥åº·æ•¸å€¼å«è„ˆææ¬„ä½
+// 健康數值含脈搏欄位
 export type HealthMetricExtended = HealthMetric & {
   value_tertiary?: number | null
 }
 
 // ============================================
-// ä»»å‹™å››è±¡é™é¡žåž‹
+// 任務四象限類型
 // ============================================
 export type TaskQuadrant = 
-  | 'do_first'      // é‡è¦ä¸”ç·Šæ€¥
-  | 'schedule'      // é‡è¦ä¸ç·Šæ€¥
-  | 'delegate'      // ç·Šæ€¥ä¸é‡è¦
-  | 'eliminate'     // ä¸é‡è¦ä¸ç·Šæ€¥
+  | 'do_first'      // 重要且緊急
+  | 'schedule'      // 重要不緊急
+  | 'delegate'      // 緊急不重要
+  | 'eliminate'     // 不重要不緊急
 
-// å–å¾—ä»»å‹™è±¡é™
+// 取得任務象限
 export function getTaskQuadrant(task: Task): TaskQuadrant {
   const isImportant = task.is_important ?? false
   const isUrgent = task.is_urgent ?? false
@@ -207,7 +199,7 @@ export function getTaskQuadrant(task: Task): TaskQuadrant {
 }
 
 // ============================================
-// é‡è¤‡é¡žåž‹
+// 重複類型
 // ============================================
 export type RecurrenceType = 
   | 'none' 
@@ -222,7 +214,7 @@ export type RecurrenceType =
   | 'custom'
 
 // ============================================
-// èª²è¡¨ç›¸é—œ
+// 課表相關
 // ============================================
 export type SlotTime = {
   slot: number
@@ -244,104 +236,104 @@ export const SCHEDULE_SLOTS: SlotTime[] = [
 ]
 
 export const DAY_OF_WEEK_LABELS: Record<number, string> = {
-  1: 'é€±ä¸€',
-  2: 'é€±äºŒ',
-  3: 'é€±ä¸‰',
-  4: 'é€±å››',
-  5: 'é€±äº”',
-  6: 'é€±å…­',
-  7: 'é€±æ—¥',
+  1: '週一',
+  2: '週二',
+  3: '週三',
+  4: '週四',
+  5: '週五',
+  6: '週六',
+  7: '週日',
 }
 
 // ============================================
-// å¿ƒæƒ…å°ç…§
+// 心情對照
 // ============================================
 export const MOOD_LABELS: Record<number, string> = {
-  1: 'ðŸ˜¢ å¾ˆå·®',
-  2: 'ðŸ˜• ä¸å¥½',
-  3: 'ðŸ˜ æ™®é€š',
-  4: 'ðŸ™‚ ä¸éŒ¯',
-  5: 'ðŸ˜„ å¾ˆæ£’',
+  1: '😢 很差',
+  2: '😕 不好',
+  3: '😐 普通',
+  4: '🙂 不錯',
+  5: '😄 很棒',
 }
 
 // ============================================
-// å¥åº·æ•¸å€¼é¡žåž‹å°ç…§
+// 健康數值類型對照
 // ============================================
 export const METRIC_TYPE_LABELS: Record<string, string> = {
-  weight: 'é«”é‡ (kg)',
-  blood_pressure: 'è¡€å£“',
-  sleep: 'ç¡çœ  (å°æ™‚)',
-  water: 'é£²æ°´ (ml)',
-  steps: 'æ­¥æ•¸',
+  weight: '體重 (kg)',
+  blood_pressure: '血壓',
+  sleep: '睡眠 (小時)',
+  water: '飲水 (ml)',
+  steps: '步數',
 }
 
 // ============================================
-// æ”¶æ”¯åˆ†é¡žå»ºè­°
+// 收支分類建議
 // ============================================
 export const EXPENSE_CATEGORIES = [
-  'é£²é£Ÿ',
-  'äº¤é€š',
-  'å¨›æ¨‚',
-  'è³¼ç‰©',
-  'å­¸ç¿’',
-  'å…¶ä»–',
+  '飲食',
+  '交通',
+  '娛樂',
+  '購物',
+  '學習',
+  '其他'
 ] as const
 
 export const INCOME_CATEGORIES = [
-  'é›¶ç”¨éŒ¢',
-  'çŽé‡‘',
-  'æ‰“å·¥',
-  'ç¦®é‡‘',
-  'å…¶ä»–',
+  '零用錢',
+  '獎金',
+  '打工',
+  '禮金',
+  '其他',
 ] as const
 
 export type ExpenseCategory = typeof EXPENSE_CATEGORIES[number]
 export type IncomeCategory = typeof INCOME_CATEGORIES[number]
 
 // ============================================
-// é‹å‹•é¡žåž‹å»ºè­°
+// 運動類型建議
 // ============================================
 export const EXERCISE_TYPES = [
-  'è·‘æ­¥',
-  'æ¸¸æ³³',
-  'ç±ƒçƒ',
-  'ç¾½çƒ',
-  'æ¡Œçƒ',
-  'å¥èº«',
-  'ç‘œçˆ',
-  'é¨Žè»Š',
-  'å¥è¡Œ',
-  'å…¶ä»–',
+  '跑步',
+  '游泳',
+  '籃球',
+  '羽球',
+  '桌球',
+  '健身',
+  '瑜珈',
+  '騎車',
+  '健行',
+  '其他',
 ] as const
 
 export type ExerciseType = typeof EXERCISE_TYPES[number]
 
 // ============================================
-// å¤©æ°£é¸é …ï¼ˆéŠè¦½æ—¥èªŒç”¨ï¼‰
+// 天氣選項（遊覽日誌用）
 // ============================================
 export const WEATHER_OPTIONS = [
-  'â˜€ï¸ æ™´å¤©',
-  'â›… å¤šé›²',
-  'â˜ï¸ é™°å¤©',
-  'ðŸŒ§ï¸ é›¨å¤©',
-  'â›ˆï¸ é›·é›¨',
-  'ðŸŒ¨ï¸ é›ªå¤©',
-  'ðŸŒ«ï¸ éœ§',
+  '☀️ 晴天',
+  '⛅ 多雲',
+  '☁️ 陰天',
+  '🌧️ 雨天',
+  '⛈️ 雷雨',
+  '🌨️ 雪天',
+  '🌫️ 霧',
 ] as const
 
 export type WeatherOption = typeof WEATHER_OPTIONS[number]
 
 // ============================================
-// åŒè¡Œè€…é¸é …ï¼ˆéŠè¦½æ—¥èªŒç”¨ï¼‰
+// 同行者選項（遊覽日誌用）
 // ============================================
 export const COMPANION_OPTIONS = [
-  'ðŸ‘¤ ç¨è‡ª',
-  'ðŸ‘¨â€ðŸ‘©â€ðŸ‘§ å®¶äºº',
-  'ðŸ‘« æœ‹å‹',
-  'ðŸ’‘ æƒ…ä¾¶',
-  'ðŸ‘¥ åŒå­¸',
-  'ðŸ¢ åŒäº‹',
-  'ðŸŽ’ åœ˜é«”æ—…éŠ',
+  '👤 獨自',
+  '👨‍👩‍👧 家人',
+  '👫 朋友',
+  '💑 情侶',
+  '👥 同學',
+  '🏢 同事',
+  '🎒 團體旅遊',
 ] as const
 
 export type CompanionOption = typeof COMPANION_OPTIONS[number]

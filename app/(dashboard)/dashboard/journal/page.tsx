@@ -417,6 +417,7 @@ export default function DashboardPage() {
           if (formData.id) {
             await supabase.from("finance_records").update({
               type: formData.type,
+              category_id: formData.category_id || null,
               category: formData.category,
               amount: parseFloat(formData.amount),
               description: formData.description,
@@ -425,6 +426,7 @@ export default function DashboardPage() {
             await supabase.from("finance_records").insert({
               user_id: user.id,
               type: formData.type,
+              category_id: formData.category_id || null,
               category: formData.category,
               amount: parseFloat(formData.amount),
               description: formData.description,
