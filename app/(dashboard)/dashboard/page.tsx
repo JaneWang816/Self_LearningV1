@@ -10,6 +10,8 @@ import { GoalSection, type Goal } from "@/components/goals/goal-card"
 import { GoalDialog, UpdateProgressDialog } from "@/components/goals/goal-dialog"
 import { useGoalProgress } from "@/lib/hooks/use-goal-progress"
 import { BookOpen, FileQuestion, AlertCircle, Layers, BarChart2, Timer } from "lucide-react"
+import { ReminderSection } from "@/components/dashboard/reminder-section"
+import { addDays, getDay } from "date-fns"
 
 interface Habit {
   id: string
@@ -34,8 +36,13 @@ export default function DashboardPage() {
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
   const [saving, setSaving] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
-
   const { syncGoalsProgress } = useGoalProgress()
+
+  // 提醒相關狀態
+  const [reminderLoading, setReminderLoading] = useState(true)
+  const [urgentTasks, setUrgentTasks] = useState<any[]>([])
+  const [todayPlans, setTodayPlans] = useState<any[]>([])
+  const [todaySchedule, setTodaySchedule] = useState<any[]>([])
 
   // ============================================
   // 載入指示器資料（日曆上的點點）
@@ -420,11 +427,69 @@ export default function DashboardPage() {
     setUpdateProgressOpen(true)
   }
 
+  // ============================================
+  // 載入提醒資料
+  // ============================================
+  const fetchReminders = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setReminderLoading(false)
+      return
+    }
+
+    const today = new Date()
+    const todayStr = format(today, "yyyy-MM-dd")
+    const threeDaysLater = format(addDays(today, 3), "yyyy-MM-dd")
+
+    // 1. 取得緊急任務（已過期或未來三天內到期，且未完成）
+    const { data: tasksData } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("user_id", user.id)
+      .is("completed_at", null)
+      .lte("due_date", threeDaysLater)
+      .order("due_date", { ascending: true })
+
+    if (tasksData) {
+      setUrgentTasks(tasksData)
+    }
+
+    // 2. 取得今日行程
+    const { data: plansData } = await supabase
+      .from("daily_plans")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("date", todayStr)
+      .order("start_time", { ascending: true, nullsFirst: false })
+
+    if (plansData) {
+      setTodayPlans(plansData)
+    }
+
+    // 3. 取得今日課表
+    const jsDay = getDay(today)
+    const dayOfWeek = jsDay === 0 ? 7 : jsDay
+
+    const { data: scheduleData } = await supabase
+      .from("schedule_slots")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("day_of_week", dayOfWeek)
+      .order("slot_number", { ascending: true })
+
+    if (scheduleData) {
+      setTodaySchedule(scheduleData)
+    }
+
+    setReminderLoading(false)
+  }, [])
+
   // 初始載入
   useEffect(() => {
     fetchIndicators()
     fetchGoals()
-  }, [fetchIndicators, fetchGoals])
+    fetchReminders()
+  }, [fetchIndicators, fetchGoals, fetchReminders])
 
   // 點擊日期 → 跳轉到日期詳情頁
   const handleSelectDate = (date: Date) => {
@@ -456,6 +521,14 @@ export default function DashboardPage() {
         indicators={indicators}
         view={calendarView}
         onViewChange={setCalendarView}
+      />
+
+      {/* ⚠️ 今日提醒 */}
+      <ReminderSection
+        urgentTasks={urgentTasks}
+        todayPlans={todayPlans}
+        todaySchedule={todaySchedule}
+        loading={reminderLoading}
       />
 
       {/* 🎯 目標追蹤 */}
