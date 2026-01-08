@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { CategoryCharts } from "@/components/finance/category-charts"
 import {
   Dialog,
   DialogContent,
@@ -118,20 +119,6 @@ export default function FinancePage() {
 
     setUserId(user.id)
 
-    // 取得當月預算
-    const currentMonth = new Date().toISOString().slice(0, 7)
-    const { data: budgetsData } = await supabase
-      .from("budgets")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("year_month", currentMonth)
-
-    if (budgetsData) {
-      setBudgets(budgetsData)
-      const total = budgetsData.find((b: any) => b.category_id === null)
-      setTotalBudget(total ? Number(total.amount) : null)
-    }
-    
     // 分開查詢記錄、用戶分類、預設分類
     const [recordsRes, userCategoriesRes, defaultCategoriesRes, profileRes] = await Promise.all([
       supabase
@@ -194,9 +181,35 @@ export default function FinancePage() {
     setLoading(false)
   }
 
+  // 載入選定月份的預算
+  const fetchBudget = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data: budgetsData } = await supabase
+      .from("budgets")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("year_month", filterMonth)
+
+    if (budgetsData) {
+      setBudgets(budgetsData)
+      const total = budgetsData.find((b: any) => b.category_id === null)
+      setTotalBudget(total ? Number(total.amount) : null)
+    } else {
+      setBudgets([])
+      setTotalBudget(null)
+    }
+  }
+
   useEffect(() => {
     fetchData()
   }, [])
+
+  // 月份變更時重新載入預算
+  useEffect(() => {
+    fetchBudget()
+  }, [filterMonth])
 
   // 依類型分類
   const expenseCategories = useMemo(() => 
@@ -248,19 +261,26 @@ export default function FinancePage() {
     return { income, expense, balance: income - expense }
   }, [records, filterMonth])
 
-  // 分類統計
+  // 分類統計（確保包含 id 和 color）
   const categoryStats = useMemo(() => {
     const monthRecords = filteredRecords.filter((r) => r.type === "expense")
-    const categoryMap = new Map<string, { id: string; name: string; icon: string; amount: number }>()
+    const categoryMap = new Map<string, { 
+      id: string
+      name: string
+      icon: string
+      amount: number
+      color?: string 
+    }>()
 
     monthRecords.forEach((r) => {
       const cat = r.finance_categories
-      const key = cat?.id || r.category
+      const key = cat?.id || r.category || "__uncategorized__"
       const current = categoryMap.get(key) || {
         id: key,
-        name: cat?.name || r.category,
+        name: cat?.name || r.category || "未分類",
         icon: cat?.icon || "📦",
         amount: 0,
+        color: cat?.color || undefined,
       }
       current.amount += Number(r.amount)
       categoryMap.set(key, current)
@@ -268,7 +288,6 @@ export default function FinancePage() {
 
     return Array.from(categoryMap.values())
       .sort((a, b) => b.amount - a.amount)
-      .slice(0, 5)
   }, [filteredRecords])
 
   // 開啟新增表單
@@ -517,35 +536,13 @@ export default function FinancePage() {
         </Card>
       )}
 
-      {/* 分類統計 */}
-      {categoryStats.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <PieChart className="w-4 h-4" />
-              {formatMonthLabel(filterMonth)} 支出分類
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {categoryStats.map((stat) => {
-                const percentage = Math.round((stat.amount / monthStats.expense) * 100) || 0
-                return (
-                  <div key={stat.id} className="flex items-center gap-3">
-                    <span className="text-lg">{stat.icon}</span>
-                    <span className="text-sm text-gray-700 w-16">{stat.name}</span>
-                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-amber-500 rounded-full" style={{ width: `${percentage}%` }} />
-                    </div>
-                    <span className="text-sm text-gray-600 w-20 text-right">${formatAmount(stat.amount)}</span>
-                    <span className="text-xs text-gray-400 w-10 text-right">{percentage}%</span>
-                  </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* 分類統計雙圖表 - 替換原本的單一分類統計 */}
+      <CategoryCharts
+        categoryStats={categoryStats}
+        totalExpense={monthStats.expense}
+        budgets={budgets}
+        monthLabel={formatMonthLabel(filterMonth)}
+      />
 
       {/* 篩選列 */}
       <div className="flex flex-wrap gap-4">
